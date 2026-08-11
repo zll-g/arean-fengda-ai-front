@@ -1,0 +1,79 @@
+{
+  "name": "yusui",
+  "description": "This is a modern component library template based on Turborepo + Vue 3.5 + TypeScript.",
+  "version": "1.0.0",
+  "packageManager": "pnpm@9.15.9",
+  "author": "qiuxiuming <qxm0797@foxmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/huangmingfu/vue3-turbo-component-lib-template",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huangmingfu/vue3-turbo-component-lib-template"
+  },
+  "bugs": "https://github.com/huangmingfu/vue3-turbo-component-lib-template/issues",
+  "keywords": [
+    "component library template",
+    "component library",
+    "ui framework",
+    "ui",
+    "turborepo",
+    "monorepo",
+    "vue3 typescript",
+    "vite6",
+    "turbo"
+  ],
+  "scripts": {
+    "dev:turbo": "turbo run dev",
+    "dev": "pnpm -F @yusui/web run dev",
+    "build": "pnpm -r build",
+    "build:turbo": "turbo run build",
+    "build:gulp": "gulp -f build/gulpfile.js",
+    "publish": "turbo run publish",
+    "lint:eslint": "eslint --max-warnings 0 \"**/*.{ts,tsx,js,jsx,cjs,mjs,vue}\" --fix",
+    "lint:format": "prettier --write \"**/*.{js,jsx,cjs,ts,tsx,mjs,mts,md,vue,scss,css,less,html,json}\"",
+    "lint:style": "stylelint \"**/*.{css,scss,less}\" --fix",
+    "lint:all": "pnpm run lint:eslint && pnpm run lint:style && pnpm run lint:format",
+    "clean": "turbo run clean --continue && rimraf .turbo dist && rm -rf node_modules",
+    "changeset:version": "pnpm changeset && pnpm changeset version",
+    "deps:update": "pnpm update -r --latest",
+    "deps:check": "pnpm outdated -r",
+    "preinstall": "npx only-allow pnpm",
+    "postinstall": "turbo run build",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@changesets/cli": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@yusui/commitlint-config": "workspace:*",
+    "@yusui/directives": "workspace:*",
+    "@yusui/eslint-config": "workspace:*",
+    "@yusui/prettier-config": "workspace:*",
+    "@yusui/stylelint-config": "workspace:*",
+    "@yusui/typescript-config": "workspace:*",
+    "@yusui/ui": "workspace:*",
+    "@yusui/utils": "workspace:*",
+    "@yusui/types": "workspace:*",
+    "eslint": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "prettier": "catalog:",
+    "rimraf": "catalog:",
+    "rollup": "catalog:",
+    "stylelint": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "vue": "catalog:"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "@algolia/client-search",
+        "search-insights"
+      ]
+    }
+  }
+}

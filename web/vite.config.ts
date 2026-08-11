@@ -1,0 +1,63 @@
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { resolve } from 'node:path';
+// import pluginBasicSsl from '@vitejs/plugin-basic-ssl';
+// import pluginMkcert from 'vite-plugin-mkcert';
+
+export default defineConfig({
+  // plugins: [vue(), pluginBasicSsl()],
+  plugins: [
+    vue(),
+    // pluginMkcert({
+    //   source: 'coding', // 使用国内源
+    // }),
+  ],
+  resolve: {
+    alias: {
+      '@': resolve(import.meta.dirname, './src'),
+    },
+  },
+  css: {
+    preprocessorOptions: {
+      sass: {
+        additionalData: `@use "@/assets/styles/element.scss" as *;`,
+      },
+      scss: {
+        additionalData: `@use "@/assets/styles/app.scss" as *;`,
+      },
+    },
+  },
+  server: {
+    // 服务端渲染
+    // 端口号
+    port: 10011,
+    host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: 'http://192.168.0.220:5100',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/oss': {
+        target: 'http://192.168.0.220:5131',
+        changeOrigin: true,
+      },
+      '/file': {
+        target: 'http://192.168.0.220:5131',
+        changeOrigin: true,
+      },
+      '/network': {
+        target: 'http://10.15.3.227:7007',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/network/, ''),
+      },
+      '/actuator': {
+        target: 'http://192.168.0.220·:5101',
+        changeOrigin: true,
+      },
+    },
+  },
+  optimizeDeps: {
+    include: ['vue'],
+  },
+});

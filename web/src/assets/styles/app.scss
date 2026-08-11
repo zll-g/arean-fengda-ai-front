@@ -1,0 +1,48 @@
+@forward './layout';
+
+// @forward './layer/index';
+
+// .scrollbar {
+//   &::-webkit-scrollbar {
+//     width: 8px;
+//     height: 8px;
+//   }
+
+//   /**
+//     轨道（Track）样式
+//     轨道背景色及边框可通过`::-webkit-scrollbar-track`设置：
+//   */
+//   &::-webkit-scrollbar-track {
+//     background: rgb(10 58 154 / 70%);
+//     border-radius: 10px;
+
+//     // box-shadow: inset 0 0 5px rgba(250, 150, 0, 0.1);
+//   }
+
+//   /**
+//     滑块（Thumb）样式
+//     滑块背景色、边框及圆角可通过以下代码调整：
+//   */
+//   &::-webkit-scrollbar-thumb {
+//     background-color: rgb(33 109 231 / 80%);
+//     background-clip: padding-box;
+//     border: 1px solid rgb(33 109 231 / 80%);
+//     border-radius: 10px;
+//   }
+
+//   /**
+//     交互效果
+//     支持hover状态变色：
+//   */
+//   &::-webkit-scrollbar-thumb:hover {
+//     background-color: rgb(33 109 231 / 60%);
+//   }
+
+//   /**
+//     隐藏默认按钮
+//     若需隐藏滚动条按钮，可设置：
+//   */
+//   &::-webkit-scrollbar-button {
+//     display: none;
+//   }
+// }

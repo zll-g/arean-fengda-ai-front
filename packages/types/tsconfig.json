@@ -1,0 +1,3 @@
+{
+  "extends": "@yusui/typescript-config/base.json"
+}

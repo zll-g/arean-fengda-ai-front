@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智维引擎</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body,
+      #app {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        font-family:
+          'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+          '微软雅黑', Arial, sans-serif;
+        font-size: 16px;
+        color: #000;
+        letter-spacing: 1px;
+      }
+
+      /* 临时注释,解决对话数据加粗换行不生效问题 */
+
+      /* div,
+      span,
+      applet,
+      object,
+      iframe,
+      p,
+      blockquote,
+      pre,
+      a,
+      abbr,
+      acronym,
+      address,
+      big,
+      cite,
+      code,
+      del,
+      dfn,
+      em,
+      img,
+      ins,
+      kbd,
+      q,
+      s,
+      samp,
+      small,
+      strike,
+      strong,
+      sub,
+      sup,
+      tt,
+      var,
+      b,
+      u,
+      i,
+      center,
+      dl,
+      dt,
+      dd,
+      ol,
+      ul,
+      li,
+      fieldset,
+      form,
+      label,
+      legend,
+      table,
+      caption,
+      tbody,
+      tfoot,
+      thead,
+      tr,
+      th,
+      td,
+      article,
+      aside,
+      canvas,
+      details,
+      embed,
+      figure,
+      figcaption,
+      footer,
+      header,
+      hgroup,
+      menu,
+      nav,
+      output,
+      ruby,
+      section,
+      summary,
+      time,
+      mark,
+      audio,
+      video {
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        font-size: 100%;
+        vertical-align: baseline;
+        border: 0;
+      } */
+
+      /* HTML5 display-role reset for older browsers */
+      article,
+      aside,
+      details,
+      figcaption,
+      figure,
+      footer,
+      header,
+      hgroup,
+      menu,
+      nav,
+      section {
+        display: block;
+      }
+
+      body {
+        line-height: 1;
+      }
+
+      ol,
+      ul {
+        list-style: none;
+      }
+
+      blockquote,
+      q {
+        quotes: none;
+      }
+
+      blockquote::before,
+      blockquote::after,
+      q::before,
+      q::after {
+        content: '';
+        content: none;
+      }
+
+      table {
+        border-spacing: 0;
+        border-collapse: collapse;
+      }
+
+      /************ 加载动画 *************/
+      #em-loader-wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+
+      #em-loader {
+        width: 120px;
+        height: 120px;
+        margin-top: -120px;
+      }
+
+      #em-loader hr {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        margin: 0;
+        border: 0;
+        border-radius: 4px;
+        animation: spin 2s ease infinite;
+      }
+
+      #em-loader :first-child {
+        background: #19a68c;
+        animation-delay: -1.5s;
+      }
+
+      #em-loader :nth-child(2) {
+        background: #f63d3a;
+        animation-delay: -1s;
+      }
+
+      #em-loader :nth-child(3) {
+        background: #fda543;
+        animation-delay: -0.5s;
+      }
+
+      #em-loader :last-child {
+        background: #193b48;
+      }
+
+      .em-loader-tip {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #909399;
+        text-align: center;
+        letter-spacing: 2px;
+      }
+
+      @keyframes spin {
+        0%,
+        100% {
+          transform: translate(0);
+        }
+
+        25% {
+          transform: translate(160%);
+        }
+
+        50% {
+          transform: translate(160%, 160%);
+        }
+
+        75% {
+          transform: translate(0, 160%);
+        }
+      }
+    </style>
+  </head>
+  <body data-theme-mode="dark" data-theme-color="theme1">
+    <div id="app"></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

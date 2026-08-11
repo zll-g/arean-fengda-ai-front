@@ -1,0 +1,25 @@
+syntax = "proto3";
+package protocol;
+
+option optimize_for = SPEED;
+option java_multiple_files = true;
+option java_package = "com.action.common.channel.context.protocol";
+option java_outer_classname = "ActionChannelProtocolFormat";
+
+enum RANGE{
+  OUTWARD = 0;//外部
+  INNER = 1; //内部
+}
+
+message Result {
+  RANGE channelType = 1;//通道类型
+  string channelSign = 2;//通道标识
+  string messageLevel = 3; //消息层级 平台 第三方等
+  string messageType = 4; //消息类型  公告，私信等
+  bytes content = 5; //消息内容
+  string describe = 6; //消息描述
+  int64 timestamp = 7;//消息时间戳
+
+}
+
+

@@ -1,0 +1,203 @@
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: ()
+);
+@use 'element-plus/theme-chalk/src/index.scss' as *;
+
+:root {
+  // --el-text-color-regular: #fff;
+  // --el-bg-color-overlay: rgb(4 25 70 / 100%);
+  // --el-border-color-light: #1182e5;
+  // --el-fill-color-blank: rgb(4 25 70 / 60%);
+  // --el-component-size: 40px;
+  // --el-border-color: #1182e5;
+  // --el-border-color-lighter: rgb(43 93 141 / 35%);
+  // --el-bg-color: rgb(43 93 141 / 100%);
+  // --el-fill-color-light: rgb(43 93 141 / 35%);
+  // --el-table-bg-color: transparent;
+  // --el-fill-color: transparent;
+  // --el-text-color-primary: #fff;
+  // --el-text-color-secondary: #fff;
+  // --el-fill-color-lighter: transparent;
+  // --el-disabled-bg-color: transparent;
+  // --el-dialog-bg-color: rgb(29 74 113 / 70%);
+  // --el-color-primary-light-9: rgb(17 130 229 / 50%);
+  // --el-menu-item-height: 40px;
+  // --el-menu-active-color: #29f9ff;
+  // --el-mask-color: rgb(6 40 109 / 50%);
+}
+
+.el-table {
+  // --el-table-header-bg-color: rgb(17 130 229 / 80%);
+  // --el-table-tr-bg-color: rgb(0 0 0 / 0%);
+
+  .el-table__cell {
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+
+    .el-button.is-text,
+    .el-button.is-link {
+      padding: 4px 6px;
+      margin-left: 0;
+    }
+  }
+
+  .el-scrollbar__view {
+    height: 100%;
+  }
+
+  .el-popper.is-dark {
+    width: 500px;
+    color: #fff;
+    background: rgb(4 25 70 / 60%);
+    border-color: #1182e5;
+
+    .el-popper__arrow::after {
+      background-color: #fff;
+    }
+  }
+}
+
+.el-popper.is-dark > .el-popper__arrow::before {
+  background: rgb(4 25 70 / 60%);
+  border-color: #1182e5;
+}
+
+.el-pagination {
+  .el-input__wrapper,
+  .el-select__wrapper {
+    min-height: 36px;
+  }
+}
+
+.el-form {
+  .el-form-item {
+    margin-bottom: 28px;
+
+    .el-form-item__label {
+      display: flex;
+      align-items: center;
+      height: auto;
+      line-height: normal;
+    }
+
+    .el-form-item__content {
+      .el-input__wrapper,
+      .el-select__wrapper,
+      .el-textarea__wrapper {
+        min-height: var(--el-component-size);
+      }
+
+      .el-form-item__error {
+        top: calc(100% + 6px);
+      }
+    }
+  }
+}
+
+.el-button {
+  min-height: var(--el-component-size);
+  letter-spacing: 2px;
+}
+
+.el-select-dropdown {
+  .el-select-dropdown__list {
+    padding: 0;
+  }
+}
+
+.el-cascader-menu {
+  .el-cascader-menu__wrap.el-scrollbar__wrap {
+    height: auto;
+  }
+
+  .el-cascader-menu__list {
+    padding: 0;
+  }
+
+  .el-cascader-menu__empty-text {
+    position: relative;
+    top: 0;
+    left: 0;
+    justify-content: center;
+    padding: 10px 0;
+    transform: none;
+  }
+}
+
+.el-menu.el-menu--popup {
+  padding: 0;
+}
+
+.el-dropdown-menu {
+  padding: 0;
+}
+
+.el-switch {
+  --el-switch-off-color: #999;
+}
+
+.el-image-viewer__actions__inner,
+.el-image-viewer__next,
+.el-image-viewer__prev,
+.el-image-viewer__close {
+  color: #000;
+}
+
+.el-date-table {
+  --el-datepicker-inrange-bg-color: var(--el-fill-color-light);
+  --el-datepicker-inrange-hover-bg-color: var(--el-bg-color);
+}
+
+.el-descriptions__body {
+  .el-descriptions__table .el-descriptions__cell {
+    &.el-descriptions__content {
+      width: auto;
+      min-width: 180px;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+  }
+}
+
+.el-popper {
+  color: var(--el-text-color-primary);
+}
+
+.el-tree {
+  background: none;
+
+  .el-tree-node__expand-icon {
+    font-size: 16px;
+    color: #00a0e9;
+  }
+
+  .el-tree-node:focus > .el-tree-node__content {
+    background: none !important;
+  }
+
+  .el-tree-node.is-current > .el-tree-node__content,
+  .el-tree-node:hover > .el-tree-node__content {
+    background-color: var(--el-bg-color) !important;
+  }
+}
+
+.el-radio-group {
+  display: flex !important;
+
+  .el-radio {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.el-message.is-center {
+  right: 0;
+  left: 0;
+  margin: 0 auto;
+  transform: translate(0);
+}
+
+// .el-avatar {
+//   --el-avatar-bg-color: rgb(17 130 229 / 43%);
+// }

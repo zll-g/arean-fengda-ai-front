@@ -1,0 +1,31 @@
+{
+  "name": "@yusui/utils",
+  "description": "@yusui utils library",
+  "version": "1.0.0",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.mjs",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "rimraf dist && rollup -c rollup.config.mjs",
+    "clean": "rimraf .turbo node_modules dist",
+    "publish": "pnpm publish"
+  },
+  "devDependencies": {
+    "@yusui/typescript-config": "workspace:*",
+    "@rollup/plugin-json": "catalog:",
+    "rollup": "catalog:",
+    "rollup-plugin-dts": "catalog:",
+    "rollup-plugin-esbuild": "catalog:",
+    "@types/crypto-js": "^4.2.2"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  }
+}
