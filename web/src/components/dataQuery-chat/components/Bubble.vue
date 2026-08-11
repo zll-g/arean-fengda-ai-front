@@ -31,7 +31,9 @@
               </div>
               <div class="timeline-text">
                 <span class="timeline-label">{{ stage.message }}</span>
-                <span v-if="stage.costMs" class="timeline-cost">{{ stage.costMs }}ms</span>
+                <span v-if="stage.costMs" class="timeline-cost">{{
+                  stage.costText || stage.costMs + 'ms'
+                }}</span>
               </div>
             </div>
 
@@ -118,8 +120,22 @@
           />
 
           <!-- ========== 区块8: 状态标签栏 ========== -->
-          <div v-if="!message.loading && message.success !== undefined" class="status-bar">
-            <el-tag :type="message.success ? 'success' : 'danger'" size="small" effect="plain">
+          <div
+            v-if="!message.loading && (message.success !== undefined || message.stopped)"
+            class="status-bar"
+          >
+            <el-tag v-if="message.stopped" type="warning" size="small" effect="plain">
+              <el-icon><VideoPause /></el-icon>
+              已停止<template v-if="message.stopReasonText">
+                · {{ message.stopReasonText }}
+              </template>
+            </el-tag>
+            <el-tag
+              v-else
+              :type="message.success ? 'success' : 'danger'"
+              size="small"
+              effect="plain"
+            >
               <el-icon>
                 <SuccessFilled v-if="message.success" />
                 <CircleCloseFilled v-else />
@@ -127,7 +143,7 @@
               {{ message.success ? '查询成功' : '查询失败' }}
             </el-tag>
             <el-tag v-if="message.costMs" type="info" size="small" effect="plain">
-              <el-icon><Timer /></el-icon> {{ message.costMs }}ms
+              <el-icon><Timer /></el-icon> {{ message.costText || message.costMs + 'ms' }}
             </el-tag>
             <el-tag v-if="message.rowCount > 0" size="small" effect="plain">
               <el-icon><Grid /></el-icon> {{ message.rowCount }} 行
@@ -160,6 +176,43 @@
             <el-button text size="small" type="warning" @click="handleFeedback">
               <el-icon><Warning /></el-icon> SQL 有误
             </el-button>
+          </div>
+
+          <!-- ========== 区块10.5: 重新回答 & 回答版本切换 ========== -->
+          <div v-if="canRegenerate || hasVariants" class="lifecycle-bar">
+            <el-button
+              v-if="canRegenerate"
+              text
+              size="small"
+              type="primary"
+              :disabled="streaming"
+              title="就当前问题重新生成一版回答（旧版本保留，可切换回溯）"
+              @click="handleRegenerate"
+            >
+              <el-icon><RefreshRight /></el-icon> 重新回答
+            </el-button>
+
+            <div v-if="hasVariants" class="variant-switcher" :class="{ switching }">
+              <el-button
+                text
+                size="small"
+                :disabled="!prevVariant || switching"
+                title="上一版本"
+                @click="handleSwitchVariant(prevVariant)"
+              >
+                <el-icon><ArrowLeft /></el-icon>
+              </el-button>
+              <span class="variant-label">{{ activeVariantPos + 1 }} / {{ variantList.length }}</span>
+              <el-button
+                text
+                size="small"
+                :disabled="!nextVariant || switching"
+                title="下一版本"
+                @click="handleSwitchVariant(nextVariant)"
+              >
+                <el-icon><ArrowRight /></el-icon>
+              </el-button>
+            </div>
           </div>
 
           <!-- ========== 区块11: 错误信息 ========== -->
@@ -228,9 +281,13 @@ import ClarifyOptions from './ClarifyOptions.vue';
 
 const props = defineProps({
   message: { type: Object, required: true },
+  /** 是否消息列表最后一条（无后端行ID的新消息仅允许对最后一条发起重新回答） */
+  isLast: { type: Boolean, default: false },
+  /** 全局是否有生成进行中（进行中禁用重新回答/版本切换，防止并发轮次） */
+  streaming: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['confirm', 'feedback', 'askQuestion']);
+const emit = defineEmits(['confirm', 'feedback', 'askQuestion', 'regenerate', 'switchVariant']);
 
 const showTable = ref(true);
 
@@ -270,6 +327,64 @@ const renderedAnswer = computed(() => {
     return props.message.answer;
   }
 });
+
+// ==================== 中断 / 重新回答 / 版本切换 ====================
+
+// 是否可发起重新回答：终态（成功/失败/已停止）+ 单数据源链路 + 目标可定位
+// （有后端行ID可精确定位任意轮次；无ID仅能由后端兜底定位会话最后一轮）
+const canRegenerate = computed(() => {
+  const m = props.message;
+  if (m.loading || m.federated) return false;
+
+  const isTerminal = m.success !== undefined || m.stopped;
+  if (!isTerminal) return false;
+
+  return m.historyId != null || props.isLast;
+});
+
+// 变体列表（按变体序号正序）；多于 1 个版本时展示切换器
+const variantList = computed(() => {
+  const list = Array.isArray(props.message.variants) ? [...props.message.variants] : [];
+  return list.sort((a, b) => (a?.variantIndex || 0) - (b?.variantIndex || 0));
+});
+
+const hasVariants = computed(() => variantList.value.length > 1);
+
+const switching = computed(() => !!props.message.variantSwitching);
+
+// 当前生效变体在列表中的位置：优先 activeVariant 标记，回退匹配消息当前 variantIndex
+const activeVariantPos = computed(() => {
+  const list = variantList.value;
+  if (list.length === 0) return 0;
+
+  const activeIdx = list.findIndex((v) => v?.activeVariant);
+  if (activeIdx >= 0) return activeIdx;
+
+  const byIndex = list.findIndex(
+    (v) => v?.variantIndex != null && v.variantIndex === props.message.variantIndex,
+  );
+  return byIndex >= 0 ? byIndex : 0;
+});
+
+const prevVariant = computed(() =>
+  activeVariantPos.value > 0 ? variantList.value[activeVariantPos.value - 1] : null,
+);
+
+const nextVariant = computed(() =>
+  activeVariantPos.value < variantList.value.length - 1
+    ? variantList.value[activeVariantPos.value + 1]
+    : null,
+);
+
+function handleRegenerate() {
+  if (props.streaming || switching.value) return;
+  emit('regenerate');
+}
+
+function handleSwitchVariant(variant) {
+  if (!variant || switching.value || props.streaming) return;
+  emit('switchVariant', variant.id);
+}
 
 function fallbackCopyText(text) {
   const textarea = document.createElement('textarea');
@@ -809,6 +924,64 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
     &:hover {
       box-shadow: 0 6px 16px rgb(15 23 42 / 8%);
       transform: translateY(-1px);
+    }
+  }
+}
+
+// ==================== 重新回答 & 版本切换 ====================
+.lifecycle-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding-top: 10px;
+  margin-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+
+  .el-button {
+    padding: 6px 10px;
+    border-radius: 999px;
+    transition:
+      transform 0.18s ease,
+      background-color 0.18s ease,
+      box-shadow 0.18s ease;
+
+    &:hover:not(.is-disabled) {
+      box-shadow: 0 6px 16px rgb(15 23 42 / 8%);
+      transform: translateY(-1px);
+    }
+  }
+
+  .variant-switcher {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    padding: 2px 6px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+
+    &.switching {
+      opacity: 0.6;
+    }
+
+    .el-button {
+      padding: 4px 6px;
+      border-radius: 999px;
+
+      &:hover:not(.is-disabled) {
+        box-shadow: none;
+        transform: none;
+      }
+    }
+
+    .variant-label {
+      min-width: 52px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: #6b7280;
+      text-align: center;
+      user-select: none;
     }
   }
 }

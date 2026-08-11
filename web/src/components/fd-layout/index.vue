@@ -267,6 +267,7 @@ const titleKeyMap: Record<string, string> = {
 
   知识问答管理: 'routeTitle.qaManage',
   知识库管理: 'routeTitle.knowledgeBaseManage',
+  分片管理: 'routeTitle.splitManagement',
   知识库: 'routeTitle.knowledgeBase',
   知识库问答: 'routeTitle.knowledgeBaseQa',
   文件管理: 'routeTitle.fileManagement',

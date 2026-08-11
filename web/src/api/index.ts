@@ -10,6 +10,7 @@ import metadata from './modules/metadata';
 import semantic from './modules/semantic';
 import fewshot from './modules/fewshot';
 import federated from './modules/federated';
+import split from './modules/split';
 import dataQueryQa from './modules/dataQuery-qa';
 import file from './modules/file';
 import health from './modules/health';
@@ -28,6 +29,7 @@ export default {
   semantic,
   fewshot,
   federated,
+  split,
   file,
   health,
   organizationInfo,

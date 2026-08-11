@@ -294,7 +294,7 @@
 
                 <el-table-column
                   :label="t('knowledgeBase.table.action')"
-                  width="250"
+                  width="320"
                   align="center"
                   fixed="right"
                 >
@@ -306,6 +306,15 @@
                         @click="triggerVersionUpdate(scope.row)"
                       >
                         {{ t('knowledgeBase.table.versionUpdate') }}
+                      </div>
+
+                      <!-- 分片管理:仅当前生效版本开放(历史版本随蓝绿切换已下线) -->
+                      <div
+                        v-if="!scope.row.__isHistory"
+                        style="color: #7c3aed; cursor: pointer"
+                        @click="goSplitManagement(scope.row)"
+                      >
+                        {{ t('splitManagement.pageTitle') }}
                       </div>
 
                       <div
@@ -346,6 +355,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import api from '@/api';
 import { Delete, Document, Edit, Menu, Plus, Search, UploadFilled } from '@element-plus/icons-vue';
 import 'element-plus/theme-chalk/display.css';
@@ -355,6 +365,18 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 type SplitStrategy = 'recursive' | 'paragraph' | 'sentence' | 'semantic' | 'fixed';
 
 const { t, locale } = useI18n();
+
+const router = useRouter();
+
+/** 跳转分片管理工作台(独立路由页,支持直达链接与浏览器前进后退) */
+const goSplitManagement = (row: any) => {
+  if (!row?.id) return;
+
+  router.push({
+    name: 'SplitManagement',
+    params: { documentId: String(row.id) },
+  });
+};
 
 const splitStrategyKeyMap: Record<SplitStrategy, string> = {
   recursive: 'knowledgeBase.splitStrategy.recursive',

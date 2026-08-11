@@ -117,6 +117,12 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '知识库管理', requireAuth: true },
           },
           {
+            path: 'split-management/:documentId',
+            name: 'SplitManagement',
+            component: () => import('@/views/web/split-management/index.vue'),
+            meta: { title: '分片管理', requireAuth: true },
+          },
+          {
             path: 'file-management',
             name: 'fileManagement',
             component: () => import('@/views/web/file-management/index.vue'),

@@ -167,11 +167,15 @@
         <!-- 消息列表 -->
         <div class="message-list">
           <MessageBubble
-            v-for="msg in chatStore.messages"
+            v-for="(msg, idx) in chatStore.messages"
             :key="msg.id"
             :message="msg"
+            :is-last="idx === chatStore.messages.length - 1"
+            :streaming="chatStore.loading"
             @feedback="handleFeedback"
             @ask-question="handleSendMessage"
+            @regenerate="handleRegenerate(msg)"
+            @switch-variant="handleSwitchVariant(msg, $event)"
           />
         </div>
 
@@ -790,7 +794,24 @@ async function handleGroupChange(groupId: string) {
 
 function handleCancel() {
   chatStore.cancelStreaming();
-  ElMessage.info(t('dataQueryChat.message.canceled'));
+  ElMessage.info(t('dataQueryChat.message.stopped'));
+}
+
+// 重新回答：就地在原气泡内生成新回答变体（旧版本保留可切换）
+async function handleRegenerate(msg: any) {
+  const started = await chatStore.regenerateMessage(msg);
+  if (!started) {
+    ElMessage.warning(t('dataQueryChat.message.regenerateUnavailable'));
+  }
+}
+
+// 切换回答版本（变体回溯）
+async function handleSwitchVariant(msg: any, historyId: string | number) {
+  try {
+    await chatStore.switchVariant(msg, historyId);
+  } catch {
+    ElMessage.error(t('dataQueryChat.message.switchVariantFailed'));
+  }
 }
 
 function handleFeedback() {
