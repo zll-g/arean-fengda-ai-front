@@ -34,16 +34,16 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://192.168.0.220:5100',
+        target: 'http://192.168.1.144:5100',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/oss': {
-        target: 'http://192.168.0.220:5131',
+        target: 'http://192.168.1.144:5131',
         changeOrigin: true,
       },
       '/file': {
-        target: 'http://192.168.0.220:5131',
+        target: 'http://192.168.1.144:5131',
         changeOrigin: true,
       },
       '/network': {
@@ -52,7 +52,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/network/, ''),
       },
       '/actuator': {
-        target: 'http://192.168.0.220·:5101',
+        target: 'http://192.168.1.144·:5101',
         changeOrigin: true,
       },
     },
