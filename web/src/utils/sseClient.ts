@@ -1,3 +1,6 @@
+import { getToken } from '@/utils/device';
+import { aiPrefix } from '@/api/http';
+
 /**
  * SSE 客户端 — TypeScript 修复版
  *
@@ -7,12 +10,7 @@
  * 3. 支持 event 和 data 跨行
  * 4. 健壮的错误处理
  * 5. 补充 TypeScript 类型定义
- * 6. 携带 JWT/version 头（与 axios 拦截器口径一致：流式轮次按登录用户登记，
- *    缺 JWT 时服务端按匿名 anon 登记，stop 接口将打不中在途轮次）
- * 7. 支持「重新回答」/regenerate 端点与 stopped 中断事件分发
  */
-
-import { getToken } from './device';
 
 export interface StageEventData {
   stageId?: string;
@@ -74,30 +72,12 @@ export interface SuggestionsReadyData {
 export interface DoneData {
   success?: boolean;
   message?: string;
-  /** 会话ID（新会话首问时由服务端创建并回传） */
-  sessionId?: string;
-  /** 全链路总耗时（毫秒） */
-  costMs?: number;
-  /** 全链路总耗时展示文本（mm:ss.SSS，前端展示位直接消费） */
-  costText?: string;
   [key: string]: unknown;
 }
 
 export interface ErrorEventData {
   errorMsg?: string;
   message?: string;
-  [key: string]: unknown;
-}
-
-/**
- * 「生成已停止」中断终态事件载荷（与知识问答 stopped 事件同款）。
- * 触发来源：用户停止(USER_STOPPED)/客户端断连(CLIENT_DISCONNECTED)/
- * 被同会话新请求替代(NEW_REQUEST)/SSE 超时(TIMEOUT)/孤儿回收(ORPHAN_RECOVERY)。
- */
-export interface StoppedData {
-  reason?: string;
-  /** 已产出部分回答长度（字） */
-  partialLength?: number;
   [key: string]: unknown;
 }
 
@@ -113,8 +93,6 @@ export interface ChatSSECallbacks {
   onChartReady?: (data: ChartReadyData) => void;
   onSuggestionsReady?: (data: SuggestionsReadyData) => void;
   onDone?: (data: DoneData) => void;
-  /** 生成被停止（服务端中断终态化后推送并关闭连接），含部分回答长度 */
-  onStopped?: (data: StoppedData) => void;
   onError?: (message: string) => void;
 }
 
@@ -133,7 +111,6 @@ type SSEEventName =
   | 'suggestions_ready'
   | 'done'
   | 'error'
-  | 'stopped'
   | string;
 
 export class ChatSSEClient {
@@ -143,26 +120,22 @@ export class ChatSSEClient {
    * 发起单数据源流式对话
    */
   async start(request: ChatSSERequest, callbacks: ChatSSECallbacks = {}): Promise<void> {
-    return this._doRequest('/api/data-chat/stream', request, callbacks);
+    return this._doRequest(`${aiPrefix}/data-chat/stream`, request, callbacks);
   }
 
   /**
    * 发起联邦查询流式对话
    */
   async startFederated(request: ChatSSERequest, callbacks: ChatSSECallbacks = {}): Promise<void> {
-    return this._doRequest('/api/chat/federated/stream', request, callbacks);
+    return this._doRequest(`${aiPrefix}/chat/federated/stream`, request, callbacks);
   }
 
   /**
-   * 重新回答（生产级变体语义，与知识问答 regenerate 同款）：
-   * 不新增用户问题，在同一问题组下生成新回答变体（variant_index 递增），
-   * 旧变体保留可切换。SSE 事件流与单数据源 stream 完全一致。
-   * 请求体：{ sessionId, historyId?, requestId? } —— historyId 为空时对会话最后一轮重答。
-   * 业务拒绝（变体上限 409 / 重复提交守卫）以 HTTP 400 + Result JSON 返回，
-   * 由 _doRequest 解析 msg 后走 onError 回调。
+   * 重新回答（生产级变体语义）：
+   * 对同一问题发起新一轮回答，旧版本保留在 variants 中可切换回溯。
    */
   async regenerate(request: ChatSSERequest, callbacks: ChatSSECallbacks = {}): Promise<void> {
-    return this._doRequest('/api/data-chat/regenerate', request, callbacks);
+    return this._doRequest(`${aiPrefix}/data-chat/regenerate`, request, callbacks);
   }
 
   /**
@@ -177,31 +150,19 @@ export class ChatSSEClient {
     this.abortController = new AbortController();
 
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-        // 与 axios 请求拦截器口径一致：标识 AI 模块版本（网关路由依赖）
-        version: 'ai',
-      };
-
-      // 携带 JWT：流式轮次按登录用户身份登记（停止/重答接口同样按 JWT 解析
-      // 轮次归属键）；缺 JWT 时双方一致降级匿名 anon，保持口径始终对齐
-      const token = getToken();
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
       const response = await fetch(url, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          Authorization: `Bearer ${getToken()}`,
+        },
         body: JSON.stringify(request),
         signal: this.abortController.signal,
       });
 
       if (!response.ok) {
-        // SSE 建立前的业务拒绝（如重新回答变体上限 409、重复提交守卫）
-        // 由全局异常处理器返回 HTTP 400 + Result JSON，解析其中的 msg 展示
-        throw new Error(await this._readHttpErrorMessage(response));
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       if (!response.body) {
@@ -392,10 +353,6 @@ export class ChatSSEClient {
         callbacks.onDone?.(data as DoneData);
         break;
 
-      case 'stopped':
-        callbacks.onStopped?.(data as StoppedData);
-        break;
-
       case 'error': {
         const errorData = data as ErrorEventData;
         callbacks.onError?.(errorData.errorMsg || errorData.message || '未知错误');
@@ -414,30 +371,6 @@ export class ChatSSEClient {
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
-    }
-  }
-
-  /**
-   * 读取非 2xx 响应中的业务错误信息：
-   * 优先解析 Result JSON 的 msg/message 字段（全局异常处理器约定），
-   * 解析失败回退 HTTP 状态描述；响应体读取失败时兜底状态文本。
-   */
-  private async _readHttpErrorMessage(response: Response): Promise<string> {
-    const fallback = `HTTP ${response.status}: ${response.statusText}`;
-
-    try {
-      const bodyText = await response.text();
-      if (!bodyText) return fallback;
-
-      try {
-        const body = JSON.parse(bodyText) as { msg?: string; message?: string };
-        return body.msg || body.message || fallback;
-      } catch {
-        // 非 JSON 响应体（网关/HTML 错误页等）：截断展示原文
-        return bodyText.length > 200 ? `${bodyText.slice(0, 200)}...` : bodyText;
-      }
-    } catch {
-      return fallback;
     }
   }
 

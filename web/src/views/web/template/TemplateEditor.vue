@@ -3,7 +3,9 @@
     <div class="editor-header">
       <div class="header-left">
         <el-button text @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>
           {{ t('templateEditor.back') }}
         </el-button>
 
@@ -12,12 +14,16 @@
 
       <div class="header-right">
         <el-button @click="handlePreview">
-          <el-icon><View /></el-icon>
+          <el-icon>
+            <View />
+          </el-icon>
           {{ t('templateEditor.preview') }}
         </el-button>
 
         <el-button type="primary" :loading="saving" @click="handleSave">
-          <el-icon><Check /></el-icon>
+          <el-icon>
+            <Check />
+          </el-icon>
           {{ isEdit ? t('templateEditor.saveUpdate') : t('templateEditor.createTemplate') }}
         </el-button>
       </div>
@@ -124,12 +130,16 @@
         <el-tab-pane :label="t('templateEditor.tab.fields')" name="fields">
           <div class="fields-toolbar">
             <el-button type="primary" @click="addField">
-              <el-icon><Plus /></el-icon>
+              <el-icon>
+                <Plus />
+              </el-icon>
               {{ t('templateEditor.fields.addField') }}
             </el-button>
 
             <el-button @click="addFieldBatch">
-              <el-icon><DocumentAdd /></el-icon>
+              <el-icon>
+                <DocumentAdd />
+              </el-icon>
               {{ t('templateEditor.fields.batchAdd') }}
             </el-button>
 
@@ -147,7 +157,9 @@
             >
               <div class="field-card-header" @click="toggleField(index)">
                 <div class="field-drag-handle">
-                  <el-icon><Rank /></el-icon>
+                  <el-icon>
+                    <Rank />
+                  </el-icon>
                 </div>
 
                 <div class="field-summary">
@@ -179,7 +191,9 @@
                     :disabled="index === 0"
                     @click.stop="moveFieldUp(index)"
                   >
-                    <el-icon><Top /></el-icon>
+                    <el-icon>
+                      <Top />
+                    </el-icon>
                   </el-button>
 
                   <el-button
@@ -188,15 +202,21 @@
                     :disabled="index === form.fields.length - 1"
                     @click.stop="moveFieldDown(index)"
                   >
-                    <el-icon><Bottom /></el-icon>
+                    <el-icon>
+                      <Bottom />
+                    </el-icon>
                   </el-button>
 
                   <el-button text size="small" type="primary" @click.stop="duplicateField(index)">
-                    <el-icon><CopyDocument /></el-icon>
+                    <el-icon>
+                      <CopyDocument />
+                    </el-icon>
                   </el-button>
 
                   <el-button text size="small" type="danger" @click.stop="removeField(index)">
-                    <el-icon><Delete /></el-icon>
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
                   </el-button>
                 </div>
               </div>
@@ -323,8 +343,8 @@
                             value="product"
                           />
                           <el-option
-                            :label="t('templateEditor.fields.supplierMasterData')"
-                            value="supplier"
+                            :label="t('templateEditor.fields.userMasterData')"
+                            value="user"
                           />
                           <el-option :label="t('masterData.source.gms')" value="gms" />
                         </el-select>
@@ -369,12 +389,16 @@
                             class="opt-input"
                           />
                           <el-button text type="danger" @click="removeOption(field, oi)">
-                            <el-icon><Delete /></el-icon>
+                            <el-icon>
+                              <Delete />
+                            </el-icon>
                           </el-button>
                         </div>
 
                         <el-button size="small" @click="addOption(field)">
-                          <el-icon><Plus /></el-icon>
+                          <el-icon>
+                            <Plus />
+                          </el-icon>
                           {{ t('templateEditor.fields.addOption') }}
                         </el-button>
                       </div>
@@ -417,7 +441,9 @@
         <el-tab-pane :label="t('templateEditor.tab.rules')" name="rules">
           <div class="rules-toolbar">
             <el-button type="primary" @click="addRule">
-              <el-icon><Plus /></el-icon>
+              <el-icon>
+                <Plus />
+              </el-icon>
               {{ t('templateEditor.rules.addRule') }}
             </el-button>
 
@@ -442,7 +468,9 @@
                   </span>
 
                   <el-button text type="danger" @click="removeRule(index)">
-                    <el-icon><Delete /></el-icon>
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
                   </el-button>
                 </div>
               </template>
@@ -573,7 +601,9 @@
         <p class="preview-desc">{{ form.description }}</p>
 
         <div v-if="form.sampleSpeech" class="preview-speech">
-          <el-icon><Microphone /></el-icon>
+          <el-icon>
+            <Microphone />
+          </el-icon>
           {{ form.sampleSpeech }}
         </div>
 
@@ -1088,7 +1118,6 @@ async function handleSave() {
   box-shadow:
     0 16px 38px rgb(126 72 24 / 8%),
     0 0 0 1px rgb(255 255 255 / 70%) inset;
-  backdrop-filter: blur(10px);
 
   .header-left {
     display: flex;
@@ -1893,7 +1922,6 @@ async function handleSave() {
 /* Loading */
 :deep(.el-loading-mask) {
   background: rgb(255 250 245 / 76%);
-  backdrop-filter: blur(2px);
 }
 
 :deep(.el-loading-spinner .path) {
@@ -2065,7 +2093,7 @@ async function handleSave() {
 }
 
 /* 移动端适配 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .template-editor-page {
     padding: 0;
   }
@@ -2147,7 +2175,7 @@ async function handleSave() {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .editor-header {
     .header-right {
       flex-direction: column;

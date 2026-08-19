@@ -178,7 +178,9 @@ const toggleSidebar = () => {
   width: 16px;
   height: 16px;
   background: #409eff;
-  mask: url('data:image/svg+xml;utf8,<svg ...></svg>') no-repeat center; /* 预留给图标 */
+  mask: url('data:image/svg+xml;utf8,<svg ...></svg>') no-repeat center;
+
+  /* 预留给图标 */
 }
 
 .ai-bubble {
@@ -234,7 +236,9 @@ const toggleSidebar = () => {
   width: 20px;
   height: 20px;
   background: #ccc;
-  border-radius: 50%; /* 预留 */
+  border-radius: 50%;
+
+  /* 预留 */
 }
 
 .custom-input :deep(.el-textarea__inner) {

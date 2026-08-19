@@ -24,7 +24,9 @@
         <el-card shadow="hover" class="ds-card" :body-style="{ padding: '20px' }">
           <div class="ds-card-header">
             <div class="ds-icon" :class="ds.status === 1 ? 'active' : 'inactive'">
-              <el-icon :size="24"><Coin /></el-icon>
+              <el-icon :size="24">
+                <Coin />
+              </el-icon>
             </div>
 
             <div class="ds-info">
@@ -485,7 +487,11 @@ function handleDbTypeChange(val: string) {
 <style scoped lang="scss">
 .datasource-view {
   height: 100%;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   color: #4a382c;
+  scrollbar-color: #e7b889 transparent;
+  scrollbar-width: thin;
   background:
     radial-gradient(circle at 92% 0%, rgb(255 138 38 / 7%) 0%, transparent 26%),
     linear-gradient(180deg, #fffaf5 0%, #fff 220px);
@@ -577,10 +583,11 @@ function handleDbTypeChange(val: string) {
 
   /* 卡片列表 */
   .card-grid {
+    box-sizing: border-box;
     max-height: 900px;
     padding: 2px 2px 12px;
-    margin-top: 0;
-    overflow: hidden auto;
+    margin: 0 !important;
+    scrollbar-gutter: stable;
     scrollbar-color: #e7b889 transparent;
     scrollbar-width: thin;
 
@@ -1133,7 +1140,7 @@ function handleDbTypeChange(val: string) {
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .datasource-view {
     .toolbar {
       flex-direction: column;

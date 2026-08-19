@@ -233,6 +233,7 @@
 <script setup lang="ts">
 import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { opcPrefix } from '@/api/http';
 
 interface SubscriptionStats {
   totalFailed: number;
@@ -340,7 +341,7 @@ function formatTimestamp(timestamp: number | string) {
 
 async function getHealthData() {
   try {
-    const res: any = await fetch(`/actuator/health/opcuaHealth`, {
+    const res: any = await fetch(`${opcPrefix}/actuator/health/opcuaHealth`, {
       method: 'GET',
     });
     const data = await res.json();
@@ -358,7 +359,7 @@ async function getOpcuaSubscribed() {
   try {
     opcuaSubscribedLoading = true;
 
-    const res: any = await fetch(`/actuator/health/opcuaSubscribed`, {
+    const res: any = await fetch(`${opcPrefix}/actuator/health/opcuaSubscribed`, {
       method: 'GET',
     });
     const data = await res.json();
@@ -1020,7 +1021,6 @@ table {
   justify-content: center;
   padding: 16px;
   background: rgb(65 40 25 / 42%);
-  backdrop-filter: blur(4px);
 }
 
 .modal-panel {
@@ -1158,13 +1158,13 @@ table {
 }
 
 /* 响应式 */
-@media (width <= 1000px) {
+@media (width <=1000px) {
   .stat-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .monitor-page {
     padding: 12px;
   }
@@ -1206,7 +1206,7 @@ table {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .monitor-page {
     padding: 8px;
   }

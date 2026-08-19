@@ -114,6 +114,110 @@
         <ChartCard title="目标 / 预测趋势" tag="未来 60 秒">
           <div ref="realtimeTargetChartDom" class="chart-container" />
         </ChartCard>
+
+        <!-- 设备故障预警 -->
+        <section class="chart-card fault-panel-card">
+          <div class="chart-header">
+            <div class="fault-header-text">
+              <h3 class="chart-title">设备故障预警</h3>
+              <p class="fault-desc">实时监测设备运行指标，异常告警与故障记录</p>
+            </div>
+          </div>
+
+          <div class="fault-filters">
+            <label class="mobile-field">
+              <span>年月</span>
+              <select v-model="runningFaults.month" @change="onFaultMonthChange">
+                <option v-for="month in runningFaults.months" :key="month" :value="month">
+                  {{ formatMonthLabel(month) }}
+                </option>
+              </select>
+            </label>
+
+            <label class="mobile-field">
+              <span>指标类型</span>
+              <select v-model="runningFaults.metricType" @change="onFaultFilterChange">
+                <option value="all">全部指标</option>
+                <option v-for="type in runningFaults.metricTypes" :key="type" :value="type">
+                  {{ type }}
+                </option>
+              </select>
+            </label>
+
+            <van-button
+              size="small"
+              plain
+              type="primary"
+              :loading="runningFaults.loading"
+              @click="loadRealtimeFaults({ resetPage: true })"
+            >
+              刷新
+            </van-button>
+          </div>
+
+          <div class="fault-list">
+            <div v-if="runningFaults.items.length === 0" class="fault-empty">
+              {{ runningFaults.loading ? '正在加载' : '暂无故障记录' }}
+            </div>
+
+            <div
+              v-for="item in runningFaults.items"
+              :key="item.id"
+              :class="['fault-card', faultLevelClass(item.level)]"
+            >
+              <div class="fault-card-top">
+                <span class="fault-level-tag" :class="faultLevelClass(item.level)">
+                  {{ faultLevelText(item.level) }}
+                </span>
+                <span class="fault-time">{{ formatFaultTime(item.alarmTime) }}</span>
+              </div>
+
+              <div class="fault-name">{{ item.metricName }}</div>
+              <div v-if="item.detail" class="fault-detail">{{ item.detail }}</div>
+
+              <div class="fault-metrics">
+                <div class="fault-metric">
+                  <span>指标类型</span>
+                  <strong>{{ item.metricType }}</strong>
+                </div>
+                <div class="fault-metric">
+                  <span>当前值</span>
+                  <strong>{{ item.currentValue }}</strong>
+                </div>
+                <div class="fault-metric">
+                  <span>正常范围</span>
+                  <strong>{{ item.normalRange }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fault-footer">
+            <span class="fault-message" :class="{ error: runningFaults.error }">
+              {{ runningFaults.message }}
+            </span>
+
+            <div class="fault-pagination">
+              <van-button
+                size="small"
+                plain
+                :disabled="runningFaults.page <= 1 || runningFaults.loading"
+                @click="changeFaultPage(runningFaults.page - 1)"
+              >
+                上一页
+              </van-button>
+              <span class="page-info">{{ runningFaults.page }} / {{ runningFaultTotalPages }}</span>
+              <van-button
+                size="small"
+                plain
+                :disabled="runningFaults.page >= runningFaultTotalPages || runningFaults.loading"
+                @click="changeFaultPage(runningFaults.page + 1)"
+              >
+                下一页
+              </van-button>
+            </div>
+          </div>
+        </section>
       </van-tab>
 
       <van-tab title="历史预测" name="history">
@@ -423,6 +527,20 @@ const history = reactive({
   response: null as PredictionResponse | null,
 });
 
+const runningFaults = reactive({
+  month: formatChinaMonth(new Date()),
+  months: [formatChinaMonth(new Date())],
+  metricType: 'all',
+  metricTypes: [] as string[],
+  page: 1,
+  pageSize: 5,
+  total: 0,
+  items: [] as any[],
+  loading: false,
+  error: false,
+  message: '',
+});
+
 const overviewChartDom = ref<HTMLElement | null>(null);
 const realtimeInputChartDom = ref<HTMLElement | null>(null);
 const realtimeTargetChartDom = ref<HTMLElement | null>(null);
@@ -460,6 +578,9 @@ const dashboardPoints = computed(() => {
 
 const realtimeMetricCards = computed(() => buildMetricCards(realtime.response));
 const historyMetricCards = computed(() => buildMetricCards(history.response));
+const runningFaultTotalPages = computed(() =>
+  Math.max(1, Math.ceil(runningFaults.total / runningFaults.pageSize)),
+);
 
 const ChartCard = defineComponent({
   props: {
@@ -1264,6 +1385,111 @@ function renderPredictionCharts(
   }
 }
 
+function formatChinaMonth(date: Date) {
+  return formatChinaLocalInput(date).slice(0, 7).replace('-', '');
+}
+
+function formatMonthLabel(month: string) {
+  return month && month.length === 6 ? `${month.slice(0, 4)}-${month.slice(4, 6)}` : '--';
+}
+
+function formatFaultTime(value: string) {
+  return value ? value.replace('T', ' ').replace('+08:00', '') : '--';
+}
+
+function faultLevelText(level: string) {
+  return level === 'fault' ? '故障' : '预警';
+}
+
+function faultLevelClass(level: string) {
+  return level === 'fault' ? 'level-fault' : 'level-warning';
+}
+
+async function onFaultMonthChange() {
+  await loadFaultOptions();
+  await loadRealtimeFaults({ resetPage: true });
+}
+
+async function onFaultFilterChange() {
+  await loadRealtimeFaults({ resetPage: true });
+}
+
+async function changeFaultPage(page: number) {
+  const targetPage = Math.min(Math.max(1, page), runningFaultTotalPages.value);
+  if (targetPage === runningFaults.page) return;
+
+  runningFaults.page = targetPage;
+  await loadRealtimeFaults();
+}
+
+async function loadFaultOptions() {
+  try {
+    const query = new URLSearchParams({ month: runningFaults.month });
+    const options = await apiGet<{
+      months?: string[];
+      currentMonth?: string;
+      metricTypes?: string[];
+    }>('/network/api/running-faults/options?' + query.toString());
+    const months = options.months?.length
+      ? options.months
+      : [options.currentMonth || runningFaults.month];
+
+    runningFaults.months = months.includes(runningFaults.month)
+      ? months
+      : [runningFaults.month, ...months];
+    runningFaults.metricTypes = options.metricTypes ?? [];
+
+    if (!runningFaults.month && options.currentMonth) {
+      runningFaults.month = options.currentMonth;
+    }
+
+    if (
+      runningFaults.metricType !== 'all' &&
+      !runningFaults.metricTypes.includes(runningFaults.metricType)
+    ) {
+      runningFaults.metricType = 'all';
+    }
+  } catch (error) {
+    console.warn('Failed to load fault options:', error);
+  }
+}
+
+async function loadRealtimeFaults(options: { resetPage?: boolean; silent?: boolean } = {}) {
+  const { resetPage = false, silent = false } = options;
+
+  if (resetPage) {
+    runningFaults.page = 1;
+  }
+
+  if (!silent) {
+    runningFaults.loading = true;
+  }
+
+  runningFaults.error = false;
+
+  try {
+    const query = new URLSearchParams({
+      month: runningFaults.month,
+      metricType: runningFaults.metricType,
+      page: String(runningFaults.page),
+      pageSize: String(runningFaults.pageSize),
+    });
+    const result = await apiGet<any>('/network/api/running-faults?' + query.toString());
+    runningFaults.month = result.month;
+    runningFaults.metricType = result.metricType;
+    runningFaults.page = result.page;
+    runningFaults.pageSize = result.pageSize;
+    runningFaults.total = result.total;
+    runningFaults.items = result.items ?? [];
+    runningFaults.message = `共 ${result.total} 条记录`;
+  } catch (error: any) {
+    runningFaults.error = true;
+    runningFaults.message = error.message;
+  } finally {
+    runningFaults.loading = false;
+  }
+}
+
 onMounted(async () => {
   window.addEventListener('resize', handleResize);
   updateTime.value = formatDateTime(new Date());
@@ -1274,6 +1500,9 @@ onMounted(async () => {
     );
 
     await refreshRealtime(true);
+
+    await loadFaultOptions();
+    await loadRealtimeFaults({ resetPage: true, silent: true });
 
     const latest = await apiGet<SnapshotRecord[]>('/network/api/history/latest?count=1');
 
@@ -1356,7 +1585,6 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   padding: 6px 0 12px;
   margin-bottom: 8px;
-  backdrop-filter: blur(10px);
 }
 
 .title-block {
@@ -1412,7 +1640,6 @@ onBeforeUnmount(() => {
   border: 1px solid rgb(255 255 255 / 80%);
   border-radius: 14px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
 }
 
 :deep(.van-tab) {
@@ -1447,7 +1674,6 @@ onBeforeUnmount(() => {
   border: 1px solid rgb(255 255 255 / 80%);
   border-radius: 18px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
 }
 
 /* 控制区 */
@@ -1851,6 +2077,197 @@ onBeforeUnmount(() => {
   height: 238px;
 }
 
+/* 设备故障预警 */
+.fault-panel-card {
+  padding: 15px;
+  margin-bottom: 14px;
+}
+
+.fault-header-text {
+  min-width: 0;
+}
+
+.fault-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.fault-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fault-filters .mobile-field {
+  min-width: 0;
+}
+
+.fault-filters :deep(.van-button) {
+  grid-column: 1 / -1;
+  height: 36px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.fault-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fault-empty {
+  padding: 28px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+}
+
+.fault-card {
+  position: relative;
+  padding: 13px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.fault-card.level-warning {
+  background: #fffdf5;
+  border-color: #ffe7b3;
+}
+
+.fault-card.level-fault {
+  background: #fff7f7;
+  border-color: #ffd6d6;
+}
+
+.fault-card-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.fault-level-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.fault-level-tag.level-warning {
+  color: #b96b00;
+  background: #fff3d6;
+}
+
+.fault-level-tag.level-fault {
+  color: #dc2626;
+  background: #ffe1e1;
+}
+
+.fault-time {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.fault-name {
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.fault-detail {
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #697386;
+}
+
+.fault-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.fault-metric {
+  min-width: 0;
+}
+
+.fault-metric span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.fault-metric strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+.fault-footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.fault-message {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.fault-message.error {
+  color: var(--danger);
+}
+
+.fault-pagination {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.fault-pagination :deep(.van-button) {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.page-info {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
 /* 历史预测表单 */
 .history-card {
   display: flex;
@@ -1939,7 +2356,7 @@ onBeforeUnmount(() => {
 }
 
 /* 小屏优化 */
-@media (width <= 390px) {
+@media (width <=390px) {
   .mobile-prediction-page {
     padding: 12px;
   }
@@ -1975,7 +2392,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width >= 600px) {
+@media (width >=600px) {
   .mobile-prediction-page {
     max-width: 560px;
     margin: 0 auto;

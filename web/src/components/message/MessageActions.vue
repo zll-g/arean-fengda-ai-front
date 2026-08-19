@@ -13,16 +13,23 @@
     </button>
 
     <!-- 点赞按钮 -->
-    <!-- <button
-      v-if="!isBreak"
+    <button
+      v-if="isRegenerate"
       class="action-btn"
       :class="{ active: feedback?.liked }"
       title="有帮助"
       @click="handleLike"
     >
       <ThumbsUp :size="15" />
-    </button> -->
+    </button>
 
+    <button v-if="isRegenerate" title="分享" class="action-btn" @click="handleShare">
+      <ExternalLink :size="14" />
+    </button>
+
+    <button v-if="isRegenerate" title="收藏" class="action-btn">
+      <BookPlus :size="14" />
+    </button>
     <!-- 点踩按钮 -->
     <!-- <button
       v-if="!isBreak"
@@ -35,12 +42,7 @@
     </button> -->
 
     <!-- 重新生成（仅AI消息） -->
-    <button
-      v-if="showRegenerate || isBreak"
-      class="action-btn"
-      title="重新生成"
-      @click="handleRegenerate"
-    >
+    <button v-if="isRegenerate" class="action-btn" title="重新生成" @click="handleRegenerate">
       <RefreshCw :size="15" />
     </button>
 
@@ -56,10 +58,7 @@
             <Edit3 :size="14" />
             <span>编辑</span>
           </button>
-          <button v-if="!isBreak" class="dropdown-item" @click="handleShare">
-            <ExternalLink :size="14" />
-            <span>分享</span>
-          </button>
+        
           <button class="dropdown-item danger" @click="handleDelete">
             <Trash2 :size="14" />
             <span>删除</span>
@@ -72,7 +71,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Check, Copy, RefreshCw } from '@/components/icons';
+import { BookPlus, Check, Copy, ExternalLink, RefreshCw, ThumbsUp } from '@/components/icons';
 import { copyToClipboard } from '@/utils/helpers';
 import type { MessageFeedback } from '@/types/chat';
 
@@ -86,6 +85,7 @@ const props = withDefaults(
     isHovered?: boolean;
     isNew?: boolean;
     isBreak?: boolean;
+    isRegenerate?: boolean;
   }>(),
   {
     showRegenerate: false,
@@ -119,9 +119,9 @@ async function handleCopy() {
   }
 }
 
-// function handleLike() {
-//   emit('like');
-// }
+function handleLike() {
+  emit('like');
+}
 
 // function handleDislike() {
 //   emit('dislike');
@@ -140,10 +140,9 @@ function handleRegenerate() {
 //   emit('edit');
 // }
 
-// function handleShare() {
-//   showMoreMenu.value = false;
-//   emit('share');
-// }
+function handleShare() {
+  emit('share');
+}
 
 // function handleDelete() {
 //   showMoreMenu.value = false;

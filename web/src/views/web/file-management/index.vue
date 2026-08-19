@@ -246,7 +246,9 @@
           @contextmenu.prevent
         >
           <button class="org-context-menu-item" type="button" @click="openContextUploadDialog">
-            <el-icon><UploadFilled /></el-icon>
+            <el-icon>
+              <UploadFilled />
+            </el-icon>
             <span>{{ t('fileManagement.uploadDocument') }}</span>
           </button>
         </div>
@@ -267,10 +269,21 @@
       <div :class="['upload-content-layout', { 'context-upload-layout': contextUploadMode }]">
         <div v-if="!contextUploadMode" class="upload-org-panel">
           <div class="upload-section-title">选择上传组织</div>
-
+          <el-input
+            v-model.trim="uploadOrgSearchKeyword"
+            class="org-search-input"
+            clearable
+            :placeholder="t('organizationInfo.searchPlaceholder')"
+            :prefix-icon="Search"
+            @input="applyUploadOrgSearch"
+            @clear="handleResetUploadOrgSearch"
+          />
           <div v-loading="orgLoading" class="upload-org-tree-wrap">
             <el-empty
-              v-if="!sourceOrgTreeData.length"
+              v-if="
+                !sourceOrgTreeData.length ||
+                  (uploadOrgSearchKeyword && !filteredUploadOrgTreeData.length)
+              "
               :description="orgErrorMessage || t('organizationInfo.empty')"
               :image-size="80"
             />
@@ -282,7 +295,7 @@
               node-key="id"
               highlight-current
               default-expand-all
-              :data="sourceOrgTreeData"
+              :data="filteredUploadOrgTreeData"
               :props="orgTreeProps"
               :current-node-key="uploadOrgId"
               :expand-on-click-node="false"
@@ -322,7 +335,9 @@
               :on-change="handleUploadChange"
             >
               <div class="custom-upload-content">
-                <el-icon class="upload-icon"><UploadFilled /></el-icon>
+                <el-icon class="upload-icon">
+                  <UploadFilled />
+                </el-icon>
                 <div class="upload-title">
                   {{
                     uploadLoading
@@ -337,6 +352,55 @@
                 </div>
               </div>
             </el-upload>
+          </div>
+
+          <!-- 上传文件列表（显示文件名和进度） -->
+          <div v-if="uploadFileStatuses.length" class="upload-file-list">
+            <div
+              v-for="file in uploadFileStatuses"
+              :key="file.uid"
+              class="upload-file-item"
+              :class="`status-${file.status}`"
+            >
+              <div class="upload-file-info">
+                <el-icon class="upload-file-icon">
+                  <CircleCheck v-if="file.status === 'success'" class="icon-success" />
+                  <CircleClose v-else-if="file.status === 'error'" class="icon-error" />
+                  <Loading v-else-if="file.status === 'uploading'" class="icon-uploading" />
+                  <Document v-else />
+                </el-icon>
+                <span class="upload-file-name" :title="file.name">{{ file.name }}</span>
+                <span class="upload-file-size">{{ formatFileSize(file.size) }}</span>
+              </div>
+              <div class="upload-file-progress">
+                <el-progress
+                  :percentage="file.progress"
+                  :status="
+                    file.status === 'error'
+                      ? 'exception'
+                      : file.status === 'success'
+                        ? 'success'
+                        : undefined
+                  "
+                  :stroke-width="6"
+                  :show-text="false"
+                />
+                <span class="upload-file-progress-text">
+                  <template v-if="file.status === 'pending'">
+                    {{ t('fileManagement.upload.waiting') }}
+                  </template>
+                  <template v-else-if="file.status === 'uploading'">
+                    {{ file.progress }}%
+                  </template>
+                  <template v-else-if="file.status === 'success'">
+                    {{ t('fileManagement.upload.done') }}
+                  </template>
+                  <template v-else-if="file.status === 'error'">
+                    {{ t('fileManagement.upload.failed') }}
+                  </template>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -422,12 +486,23 @@
 
 <script setup lang="ts">
 import api from '@/api';
-import { Connection, Delete, Download, Search, UploadFilled, View } from '@element-plus/icons-vue';
+import {
+  CircleCheck,
+  CircleClose,
+  Connection,
+  Delete,
+  Document,
+  Download,
+  Loading,
+  Search,
+  UploadFilled,
+  View,
+} from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import FilePreviewDialog from '@/components/filePreviewDialog/index.vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-
+import { ossPrefix } from '@/api/http';
 interface OrganizationTreeNode {
   id: string;
   name: string;
@@ -462,6 +537,14 @@ interface KnowledgeBaseRecord {
   documentCount?: number;
 }
 
+interface UploadFileStatus {
+  uid: number;
+  name: string;
+  size: number;
+  progress: number;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+}
+
 interface FilePageData {
   records: ApiFileRecord[];
   total: number;
@@ -485,6 +568,7 @@ const errorMessage = ref('');
 const orgErrorMessage = ref('');
 const searchKeyword = ref('');
 const orgSearchKeyword = ref('');
+const uploadOrgSearchKeyword = ref('');
 const tableData = ref<ApiFileRecord[]>([]);
 const selectedRows = ref<ApiFileRecord[]>([]);
 const supportedFormatList = ref<string[]>(allowSuffixList);
@@ -501,10 +585,12 @@ const orgContextMenuPosition = reactive({
   y: 0,
 });
 const uploadFileList = ref<any[]>([]);
+const uploadFileStatuses = ref<UploadFileStatus[]>([]);
 const filePreviewDialogRef = ref<InstanceType<typeof FilePreviewDialog>>();
 const { t, locale } = useI18n();
 
 const sourceOrgTreeData = ref<OrganizationTreeNode[]>([]);
+const filteredUploadOrgTreeData = ref<OrganizationTreeNode[]>([]);
 const orgTreeData = ref<OrganizationTreeNode[]>([]);
 const selectedOrgId = ref('');
 const uploadOrgId = ref('');
@@ -604,6 +690,26 @@ const handleResetOrgSearch = () => {
   applyOrgSearch();
 };
 
+const applyUploadOrgSearch = () => {
+  filteredUploadOrgTreeData.value = filterTree(
+    sourceOrgTreeData.value,
+    uploadOrgSearchKeyword.value,
+  );
+
+  // 输入了搜索文字后，取消当前选中的组织
+  if (uploadOrgSearchKeyword.value) {
+    uploadOrgId.value = '';
+    uploadOrgTreeRef.value?.setCurrentKey(null);
+  }
+};
+
+const handleResetUploadOrgSearch = () => {
+  uploadOrgSearchKeyword.value = '';
+  uploadOrgId.value = '';
+  uploadOrgTreeRef.value?.setCurrentKey(null);
+  filteredUploadOrgTreeData.value = cloneTree(sourceOrgTreeData.value);
+};
+
 const resetFileList = (message = '') => {
   tableData.value = [];
   selectedRows.value = [];
@@ -663,14 +769,8 @@ const fetchOrganizationTree = async () => {
 
     sourceOrgTreeData.value = list;
     orgTreeData.value = cloneTree(list);
-    if (res.data[0].id) {
-      selectedOrgId.value = res.data[0]?.id;
-    }
 
     pagination.current = 1;
-
-    await nextTick();
-    orgTreeRef.value?.setCurrentKey(selectedOrgId.value);
 
     await fetchFileList();
   } catch (error) {
@@ -801,10 +901,12 @@ const buildDocFiles = (data: ApiFileRecord[]) => {
     originalName: item.fileOriginalName,
     savedFileName: item.fileName,
     fileSize: item.fileSize,
+    bucketName: item.bucketName,
   }));
 };
 
 const handleEmbedFiles = async () => {
+  console.log('handleEmbedFiles');
   if (!embedKnowledgeBaseId.value) {
     ElMessage.warning(t('fileManagement.message.selectKnowledgeBase'));
     return;
@@ -814,7 +916,6 @@ const handleEmbedFiles = async () => {
     ElMessage.warning(t('fileManagement.message.selectEmbedFile'));
     return;
   }
-
   const docFiles = buildDocFiles(embedFiles.value);
 
   if (docFiles.some((item) => !item.fileUrl || !item.savedFileName)) {
@@ -871,6 +972,8 @@ const openUploadDialog = async () => {
   uploadDialogVisible.value = true;
   resetUpload();
   uploadOrgId.value = '';
+  uploadOrgSearchKeyword.value = '';
+  filteredUploadOrgTreeData.value = cloneTree(sourceOrgTreeData.value);
 
   await nextTick();
   uploadOrgTreeRef.value?.setCurrentKey(undefined);
@@ -890,6 +993,8 @@ const openContextUploadDialog = async () => {
   uploadDialogVisible.value = true;
   resetUpload();
   uploadOrgId.value = node.id;
+  uploadOrgSearchKeyword.value = '';
+  filteredUploadOrgTreeData.value = cloneTree(sourceOrgTreeData.value);
 
   await nextTick();
 };
@@ -912,6 +1017,7 @@ const handleUploadDialogClosed = () => {
 
 const resetUpload = () => {
   uploadFileList.value = [];
+  uploadFileStatuses.value = [];
   uploadRef.value?.clearFiles();
 
   if (uploadTimer) {
@@ -938,7 +1044,7 @@ const handleUploadChange = (_file: any, fileList: any) => {
 const uploadFiles = async (fileList: any) => {
   if (!fileList.length) return;
 
-  const validFiles = fileList.filter((item: any) => {
+  const validFiles: any[] = fileList.filter((item: any) => {
     const suffix = getSuffixByName(item.name).toLowerCase();
     return allowSuffixList.includes(suffix);
   });
@@ -957,20 +1063,49 @@ const uploadFiles = async (fileList: any) => {
   }
 
   uploadFileList.value = validFiles as any[];
+
+  // 初始化文件上传状态列表
+  uploadFileStatuses.value = validFiles.map((item: any, index: number) => ({
+    uid: item.uid || index,
+    name: item.name || (item.raw as File)?.name || '-',
+    size: (item.raw as File)?.size || item.size || 0,
+    progress: 0,
+    status: 'pending' as const,
+  }));
+
   uploadLoading.value = true;
 
   let successCount = 0;
 
   try {
-    for (const item of validFiles) {
+    for (let i = 0; i < validFiles.length; i++) {
+      const item = validFiles[i];
+      const fileStatus = uploadFileStatuses.value[i];
+
+      if (fileStatus) {
+        fileStatus.status = 'uploading';
+      }
+
       try {
         await (api.base.getoDssUploadByOrg as any)(
           'fengda-file',
           item.raw as File,
           uploadOrgId.value,
+          (progressEvent: any) => {
+            if (fileStatus && progressEvent.total) {
+              fileStatus.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            }
+          },
         );
         successCount += 1;
+        if (fileStatus) {
+          fileStatus.status = 'success';
+          fileStatus.progress = 100;
+        }
       } catch (error: any) {
+        if (fileStatus) {
+          fileStatus.status = 'error';
+        }
         if (error.code === '401') {
           ElMessage.warning(error.msg);
           return;
@@ -982,10 +1117,6 @@ const uploadFiles = async (fileList: any) => {
       ElMessage.success(t('fileManagement.message.uploadSuccessCount', { count: successCount }));
 
       pagination.current = 1;
-      uploadDialogVisible.value = false;
-      resetUpload();
-      uploadOrgId.value = '';
-
       await nextTick();
       await fetchFileList();
       return;
@@ -1009,7 +1140,7 @@ const uploadFiles = async (fileList: any) => {
 
 const handleDownloadFile = async (row: ApiFileRecord) => {
   try {
-    const res = await fetch(`/oss/download?id=${encodeURIComponent(row.id)}`, {
+    const res = await fetch(`${ossPrefix}/download?id=${encodeURIComponent(row.id)}`, {
       method: 'GET',
     });
 
@@ -1139,7 +1270,6 @@ onBeforeUnmount(() => {
   box-shadow:
     0 16px 38px rgb(92 54 24 / 16%),
     0 0 0 1px rgb(255 255 255 / 70%) inset;
-  backdrop-filter: blur(12px);
 }
 
 .org-context-menu-item {
@@ -1648,6 +1778,131 @@ onBeforeUnmount(() => {
   color: #a18b7b;
   text-align: center;
   letter-spacing: 0.8px;
+}
+
+/* 上传文件列表 */
+.upload-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  margin-top: 8px;
+  overflow-y: auto;
+  scrollbar-color: #e7b889 transparent;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #e7b889;
+    border-radius: 999px;
+  }
+}
+
+.upload-file-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #f0dfcf;
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+
+  &.status-uploading {
+    background: #fffaf5;
+    border-color: #ffc58f;
+  }
+
+  &.status-success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+
+  &.status-error {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+}
+
+.upload-file-info {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.upload-file-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: #d98a49;
+
+  .icon-success {
+    color: #22c55e;
+  }
+
+  .icon-error {
+    color: #ef4444;
+  }
+
+  .icon-uploading {
+    color: #f97316;
+    animation: rotate 1.2s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.upload-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a382c;
+  white-space: nowrap;
+}
+
+.upload-file-size {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #a18b7b;
+}
+
+.upload-file-progress {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  :deep(.el-progress-bar__outer) {
+    background: #f0dfcf;
+    border-radius: 999px;
+  }
+
+  :deep(.el-progress-bar__inner) {
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+}
+
+.upload-file-progress-text {
+  flex-shrink: 0;
+  min-width: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a18b7b;
+  text-align: right;
 }
 
 /* 嵌入弹窗 */
@@ -2312,7 +2567,7 @@ onBeforeUnmount(() => {
 }
 
 /* 响应式 */
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .card-header {
     flex-direction: column;
     align-items: flex-start;
@@ -2338,7 +2593,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .file-page {
     padding: 12px;
   }
@@ -2415,7 +2670,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .file-page {
     padding: 8px;
   }

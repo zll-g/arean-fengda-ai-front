@@ -506,6 +506,21 @@ export const useChatStore = defineStore('knowledge-chat', () => {
     );
   }
 
+  function updateSuggestionsConversation(
+    conversationId: string,
+    messageId: string,
+    suggestions: any[],
+  ) {
+    updateMessageInConversation(
+      conversationId,
+      messageId,
+      {
+        suggestions: JSON.stringify(suggestions || []),
+      },
+      true,
+    );
+  }
+
   function updateReference(messageId: string, reference: any[]) {
     const conversationId = activeConversationId.value;
 
@@ -679,6 +694,82 @@ export const useChatStore = defineStore('knowledge-chat', () => {
     }
   }
 
+  async function loadMessageVariants(conversationId: string, messageId: string) {
+    const conversation = conversationCache.value[conversationId];
+    const message = conversation?.messages?.find((m: Message) => m.id === messageId);
+    const userMessageId = message?.userMessageId;
+
+    if (!conversation || !message || !userMessageId) return;
+
+    try {
+      const res: any = await api.knowledgeQa.listMessageVariants(userMessageId);
+      const variants = ((res?.data || []) as any[])
+        .slice()
+        .sort((a, b) => (a?.variantIndex || 0) - (b?.variantIndex || 0));
+
+      updateMessageInConversation(conversationId, messageId, { variants, variantsLoaded: true });
+    } catch (error) {
+      console.error('加载回答版本失败:', error);
+      updateMessageInConversation(conversationId, messageId, { variantsLoaded: true });
+    }
+  }
+
+  async function switchMessageVariant(conversationId: string, messageId: string, delta: number) {
+    const conversation = conversationCache.value[conversationId];
+    const message = conversation?.messages?.find((m: Message) => m.id === messageId);
+
+    if (!conversation || !message || message.role !== MessageRole.ASSISTANT) return;
+    if (message.variantSwitching || message.isStreaming) return;
+    if (!message.userMessageId) return;
+
+    if (!message.variantsLoaded) {
+      await loadMessageVariants(conversationId, messageId);
+    }
+
+    const variants = message.variants || [];
+    if (variants.length < 2) return;
+
+    const activePos = (() => {
+      const byActive = variants.findIndex((v: any) => v?.activeVariant === true);
+      if (byActive >= 0) return byActive;
+
+      const byIndex = variants.findIndex((v: any) => v?.variantIndex === message.variantIndex);
+      return byIndex >= 0 ? byIndex : 0;
+    })();
+
+    const target = variants[activePos + delta];
+    if (!target?.id) return;
+
+    updateMessageInConversation(conversationId, messageId, { variantSwitching: true });
+
+    try {
+      await api.knowledgeQa.activateMessageVariant(String(target.id));
+
+      updateMessageInConversation(conversationId, messageId, {
+        content: target.content || '',
+        reference:
+          typeof target.reference === 'string'
+            ? target.reference
+            : JSON.stringify(target.reference || []),
+        variantIndex: target.variantIndex,
+        variantCount: variants.length,
+        messageId: String(target.id),
+        isBreak: target.status === 'INTERRUPTED',
+        isError: false,
+        errorMessage: undefined,
+        variants: variants.map((v: any) => ({
+          ...v,
+          activeVariant: String(v.id) === String(target.id),
+        })),
+      });
+    } catch (error) {
+      console.error('切换回答版本失败:', error);
+      throw error;
+    } finally {
+      updateMessageInConversation(conversationId, messageId, { variantSwitching: false });
+    }
+  }
+
   function onChangeRefreshStatus() {
     refreshStatus.value = !refreshStatus.value;
   }
@@ -720,8 +811,11 @@ export const useChatStore = defineStore('knowledge-chat', () => {
     updateMessageContentInConversation,
     updateReference,
     updateReferenceInConversation,
+    updateSuggestionsConversation,
     setMessageFeedback,
     setMessageCopied,
+    loadMessageVariants,
+    switchMessageVariant,
     startStreaming,
     stopStreaming,
     finishStreaming,

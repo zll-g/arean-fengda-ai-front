@@ -483,7 +483,6 @@ watch(
   background: linear-gradient(180deg, rgb(255 255 255 / 98%) 0%, rgb(255 250 245 / 96%) 100%);
   border-bottom: 1px solid rgb(242 226 210 / 90%);
   box-shadow: 0 8px 28px rgb(126 72 24 / 5%);
-  backdrop-filter: blur(16px);
 
   .dark & {
     background: linear-gradient(180deg, rgb(31 25 21 / 98%) 0%, rgb(25 20 17 / 96%) 100%);
@@ -580,7 +579,7 @@ watch(
   align-items: center;
   height: 46px;
   padding: 4px 6px 4px 12px;
-  background: rgb(255 249 243 / 92%);
+  background: #fffaf5;
   border: 1px solid rgb(243 224 206 / 88%);
   border-radius: 14px;
   transition:
@@ -595,11 +594,11 @@ watch(
   }
 
   .dark & {
-    background: rgb(59 46 37 / 55%);
+    background: #3b2e26;
     border-color: #4a392e;
 
     &:hover {
-      background: rgb(67 51 40 / 72%);
+      background: #433328;
       border-color: rgb(255 157 66 / 26%);
     }
   }
@@ -730,7 +729,7 @@ watch(
   color: #4b3d32;
   cursor: pointer;
   outline: none;
-  background: rgb(255 249 243 / 92%);
+  background: #fffaf5;
   border: 1px solid rgb(243 224 206 / 88%);
   border-radius: 14px;
   transition:
@@ -756,7 +755,7 @@ watch(
 
   .dark & {
     color: #f1e7df;
-    background: rgb(59 46 37 / 55%);
+    background: #3b2e26;
     border-color: #4a392e;
 
     &:hover,
@@ -820,7 +819,6 @@ watch(
   box-shadow:
     0 18px 48px rgb(92 54 24 / 14%),
     0 0 0 1px rgb(255 255 255 / 72%) inset;
-  backdrop-filter: blur(18px);
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -1195,7 +1193,6 @@ watch(
   box-shadow:
     0 18px 48px rgb(92 54 24 / 14%),
     0 0 0 1px rgb(255 255 255 / 72%) inset;
-  backdrop-filter: blur(18px);
 
   &::before {
     position: absolute;
@@ -1318,7 +1315,7 @@ watch(
 }
 
 /* 中等屏幕 */
-@media (width <= 960px) {
+@media (width <=960px) {
   .chat-header {
     min-height: 68px;
     padding: 10px 16px;
@@ -1351,7 +1348,7 @@ watch(
 }
 
 /* 小屏幕 */
-@media (width <= 640px) {
+@media (width <=640px) {
   .chat-header {
     flex-direction: column;
     gap: 12px;

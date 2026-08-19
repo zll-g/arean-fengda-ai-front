@@ -1,7 +1,8 @@
 import http from '../http';
+import { opcPrefix } from '../http';
 
 export const getHealth = () => {
-  return http.get(`/actuator/health/opcuaHealth`, {
+  return http.get(`${opcPrefix}/actuator/health/opcuaHealth`, {
     isToken: false,
   });
 };

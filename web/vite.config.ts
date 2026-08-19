@@ -3,11 +3,14 @@ import vue from '@vitejs/plugin-vue';
 import { resolve } from 'node:path';
 // import pluginBasicSsl from '@vitejs/plugin-basic-ssl';
 // import pluginMkcert from 'vite-plugin-mkcert';
-
+import { fileViewerRenderers } from '@file-viewer/vite-plugin';
 export default defineConfig({
   // plugins: [vue(), pluginBasicSsl()],
   plugins: [
     vue(),
+    fileViewerRenderers({
+      copyAssets: true,
+    }),
     // pluginMkcert({
     //   source: 'coding', // 使用国内源
     // }),
@@ -34,27 +37,35 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://192.168.1.144:5100',
+        target: 'http://192.168.1.144:5488',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      '/oss': {
-        target: 'http://192.168.1.144:5131',
-        changeOrigin: true,
-      },
-      '/file': {
-        target: 'http://192.168.1.144:5131',
-        changeOrigin: true,
-      },
+      // '/api': {
+      //   target: 'http://192.168.1.144:5100',
+      //   changeOrigin: true,
+      //   rewrite: (path) => path.replace(/^\/api/, ''),
+      // },
+      // '/oss': {
+      //   target: 'http://192.168.1.144:5131',
+      //   changeOrigin: true,
+      // },
+      // '/file': {
+      //   target: 'http://192.168.1.144:5131',
+      //   changeOrigin: true,
+      // },
       '/network': {
         target: 'http://10.15.3.227:7007',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/network/, ''),
       },
-      '/actuator': {
-        target: 'http://192.168.1.144·:5101',
-        changeOrigin: true,
-      },
+      // '/opc': {
+      //   target: 'http://192.168.1.144:5101',
+      //   changeOrigin: true,
+      // },
+    },
+    watch: {
+      ignored: ['**/public/**'],
     },
   },
   optimizeDeps: {

@@ -10,12 +10,18 @@ import metadata from './modules/metadata';
 import semantic from './modules/semantic';
 import fewshot from './modules/fewshot';
 import federated from './modules/federated';
-import split from './modules/split';
 import dataQueryQa from './modules/dataQuery-qa';
 import file from './modules/file';
 import health from './modules/health';
 import organizationInfo from './modules/organization-info';
+import suggest from './modules/suggest';
+import login from './modules/login';
+import home from './modules/home';
+import split from './modules/split';
+
 export default {
+  login,
+  home,
   form,
   voiceForm,
   base,
@@ -32,5 +38,6 @@ export default {
   split,
   file,
   health,
+  suggest,
   organizationInfo,
 };

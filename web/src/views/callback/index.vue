@@ -32,6 +32,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { isLoggedIn, isMobile, saveToken, saveUserInfo } from '@/utils/device';
+import { aiPrefix } from '@/api/http';
 
 const router = useRouter();
 
@@ -86,7 +87,7 @@ const handleCallback = async () => {
       code,
       state,
     };
-    const response = await fetch('/api/gms/auth/callback', {
+    const response = await fetch(`${aiPrefix}/gms/auth/callback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -169,8 +170,6 @@ onUnmounted(() => {
     box-shadow:
       0 10px 40px rgb(0 0 0 / 5%),
       inset 0 0 0 1px rgb(255 255 255 / 80%);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
 
     &.fade-in {
       animation: fadeInUP 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -225,7 +224,9 @@ onUnmounted(() => {
 
       :deep(.el-progress-bar__inner) {
         border-radius: 10px;
-        transition: width 0.3s ease; /* 让进度条涨起来更丝滑 */
+        transition: width 0.3s ease;
+
+        /* 让进度条涨起来更丝滑 */
       }
 
       :deep(.el-progress-bar__outer) {
@@ -260,7 +261,7 @@ onUnmounted(() => {
     }
 
     /* 移动端媒体查询适配 */
-    @media screen and (width <= 480px) {
+    @media screen and (width <=480px) {
       padding: 35px 25px;
       border-radius: 20px;
 

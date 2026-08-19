@@ -338,7 +338,6 @@ function handleDeleteConversation() {
   align-items: center;
   justify-content: center;
   background: rgb(0 0 0 / 50%);
-  backdrop-filter: blur(4px);
 }
 
 .conversation-settings-modal {

@@ -20,13 +20,17 @@
       :header-cell-style="{ background: '#f5f7fa', fontWeight: 600 }"
     >
       <el-table-column
-        v-for="col in columns"
+        v-for="(col, idx) in columns"
         :key="col"
         :prop="col"
-        :label="col"
-        :min-width="calcColumnWidth(col)"
+        :label="columnLabel(col, idx)"
+        :min-width="calcColumnWidth(columnLabel(col, idx))"
         show-overflow-tooltip
       >
+        <!-- 表头：中文展示名为主，悬停提示原始字段名（展示治理：取值仍按原始列名） -->
+        <template #header>
+          <span class="col-header" :title="String(col)">{{ columnLabel(col, idx) }}</span>
+        </template>
         <template #default="{ row }">
           <span :class="getValueClass(row[col])">{{ formatValue(row[col]) }}</span>
         </template>
@@ -53,6 +57,8 @@ import { ElMessage } from 'element-plus';
 
 const props = defineProps({
   columns: { type: Array, default: () => [] },
+  /** 与 columns 同序的中文展示名（后端展示治理下发；缺省/不齐回退原始列名） */
+  displayColumns: { type: Array, default: () => [] },
   data: { type: Array, default: () => [] },
 });
 
@@ -64,10 +70,24 @@ const pagedData = computed(() => {
   return props.data.slice(start, start + pageSize);
 });
 
-function calcColumnWidth(col) {
-  const len = col.length;
-  if (len > 20) return 200;
-  if (len > 10) return 150;
+/** 列的中文展示名：与 columns 同序对齐，缺失回退原始列名（展示层永不缺标签） */
+function columnLabel(col, index) {
+  const aligned =
+    Array.isArray(props.displayColumns) && props.displayColumns.length === props.columns.length;
+
+  if (!aligned) return String(col ?? '');
+
+  const label = props.displayColumns[index];
+  const text = label == null ? '' : String(label).trim();
+
+  return text || String(col ?? '');
+}
+
+function calcColumnWidth(label) {
+  // 中文按双宽度估算（每字约 2 个半角宽）
+  const visualLen = String(label ?? '').replace(/[一-鿿㐀-䶿]/g, '  ').length;
+  if (visualLen > 20) return 200;
+  if (visualLen > 10) return 150;
   return 120;
 }
 
@@ -97,7 +117,14 @@ function exportCSV() {
     return;
   }
 
-  const header = props.columns.join(',');
+  // 导出表头同样使用中文展示名（与界面一致，便于直接使用）
+  const header = props.columns
+    .map((col, idx) => {
+      const label = columnLabel(col, idx);
+      // CSV 中含逗号/引号/换行的表头字段需要用双引号包裹
+      return /[",\n]/.test(label) ? '"' + label.replace(/"/g, '""') + '"' : label;
+    })
+    .join(',');
   const rows = props.data.map((row) =>
     props.columns
       .map((col) => {

@@ -96,15 +96,17 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .boiler-dashboard-page {
-  --primary: #2f80ed;
-  --primary-soft: #eaf3ff;
+  --primary: #f58220;
+  --primary-dark: #e96f0f;
+  --primary-soft: #fff4e9;
+  --primary-soft-strong: #fff0e2;
   --success: #27ae60;
   --card-bg: #fff;
-  --border: #e6edf7;
-  --border-strong: #d6e4f5;
-  --text-title: #101828;
-  --text-main: #344054;
-  --text-subtle: #98a2b3;
+  --border: #eee4de;
+  --border-strong: #ead7ca;
+  --text-title: #2f251f;
+  --text-main: #5f5047;
+  --text-subtle: #9b8b80;
 
   box-sizing: border-box;
   display: grid;
@@ -116,8 +118,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
   color: var(--text-main);
   background:
-    radial-gradient(circle at 0 0, rgb(47 128 237 / 6%), transparent 24%),
-    linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+    radial-gradient(circle at 0 0, rgb(245 130 32 / 9%), transparent 26%),
+    linear-gradient(180deg, #fffaf6 0%, #f8f3ef 100%);
 }
 
 .panel-card {
@@ -128,7 +130,7 @@ onBeforeUnmount(() => {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 6px 18px rgb(47 128 237 / 5%);
+  box-shadow: 0 6px 18px rgb(95 70 52 / 6%);
 }
 
 .iframe-section {
@@ -163,9 +165,9 @@ onBeforeUnmount(() => {
 .title-mark {
   width: 4px;
   height: 20px;
-  background: linear-gradient(180deg, #4096ff, #2f80ed);
+  background: linear-gradient(180deg, #ff9a3d 0%, var(--primary) 100%);
   border-radius: 999px;
-  box-shadow: 0 4px 10px rgb(47 128 237 / 22%);
+  box-shadow: 0 4px 10px rgb(245 130 32 / 24%);
 }
 
 .section-title h2 {
@@ -187,7 +189,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #f2f4f7;
+  background: #f7f1ec;
   border: 1px solid var(--border-strong);
   border-radius: 12px;
 }
@@ -214,11 +216,10 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: #fff;
   cursor: pointer;
-  background: rgb(16 24 40 / 62%);
+  background: rgb(78 55 40 / 68%);
   border: 1px solid rgb(255 255 255 / 64%);
   border-radius: 999px;
-  box-shadow: 0 8px 20px rgb(15 23 42 / 18%);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgb(76 49 31 / 18%);
   transition:
     transform 0.18s ease,
     background 0.18s ease,
@@ -226,13 +227,21 @@ onBeforeUnmount(() => {
 }
 
 .fullscreen-btn:hover {
-  background: rgb(47 128 237 / 92%);
-  box-shadow: 0 10px 24px rgb(47 128 237 / 28%);
+  background: linear-gradient(135deg, #ff9a3d, var(--primary));
+  box-shadow: 0 10px 24px rgb(245 130 32 / 30%);
   transform: translateY(-1px);
 }
 
 .fullscreen-btn:active {
   transform: translateY(0);
+}
+
+.fullscreen-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgb(255 255 255 / 72%),
+    0 0 0 6px rgb(245 130 32 / 34%),
+    0 10px 24px rgb(245 130 32 / 24%);
 }
 
 .fullscreen-icon {
@@ -244,13 +253,24 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #f8fbff;
+  background: #fffaf6;
   border-radius: 12px;
 }
 
 /* 压缩 Predict 子组件，避免撑出父容器 */
 .predict-body :deep(.prediction-page),
 .predict-body :deep(.app-shell) {
+  --primary: #f58220;
+  --primary-dark: #e96f0f;
+  --primary-soft: #fff4e9;
+  --primary-soft-strong: #fff0e2;
+  --primary-border: #f4d7bf;
+  --border: #eee4de;
+  --border-strong: #ead7ca;
+  --text-title: #2f251f;
+  --text-main: #5f5047;
+  --text-subtle: #9b8b80;
+
   width: 100%;
   height: auto !important;
   min-height: 0 !important;
@@ -421,7 +441,7 @@ onBeforeUnmount(() => {
   .fullscreen-btn {
     right: 24px;
     bottom: 24px;
-    background: rgb(16 24 40 / 66%);
+    background: rgb(78 55 40 / 70%);
   }
 }
 
@@ -438,7 +458,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 1440px) {
+@media (width <=1440px) {
   .boiler-dashboard-page {
     grid-template-rows: clamp(430px, 58vh, 620px) minmax(0, 1fr);
     gap: 10px;
@@ -459,7 +479,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .boiler-dashboard-page {
     grid-template-rows: 500px auto;
     height: auto;
@@ -486,7 +506,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .boiler-dashboard-page {
     grid-template-rows: 420px auto;
     padding: 10px;

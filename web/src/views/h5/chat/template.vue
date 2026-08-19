@@ -34,16 +34,21 @@
           v-for="item in filteredTemplates"
           :key="item.id"
           class="template-card"
-          :style="{ '--card-color': item.color || '#4F46E5' }"
+          :style="{ '--card-color': '#f97316' }"
         >
           <!-- 置顶标记 -->
           <div v-if="item.pinned" class="pin-badge">
-            <el-icon :size="12"><Top /></el-icon>
+            <el-icon :size="12">
+              <Top />
+            </el-icon>
             {{ t('templateList.pinned') }}
           </div>
 
           <div class="card-header">
-            <div class="card-icon" :style="{ background: item.color || '#4F46E5' }">
+            <div
+              class="card-icon"
+              :style="{ background: 'linear-gradient(135deg, #fb923c, #f97316)' }"
+            >
               <el-icon :size="28" color="#fff">
                 <component :is="item.icon || 'Document'" />
               </el-icon>
@@ -65,12 +70,16 @@
 
           <div class="card-stats">
             <div class="stat-item">
-              <el-icon><Edit /></el-icon>
+              <el-icon>
+                <Edit />
+              </el-icon>
               <span>{{ t('templateList.fieldCount', { count: item.fieldCount || 0 }) }}</span>
             </div>
 
             <div class="stat-item">
-              <el-icon><Clock /></el-icon>
+              <el-icon>
+                <Clock />
+              </el-icon>
               <span>{{ formatDate(item.createdAt) }}</span>
             </div>
           </div>
@@ -78,7 +87,9 @@
           <!-- 示范话术 -->
           <div v-if="item.sampleSpeech" class="card-speech">
             <div class="speech-label">
-              <el-icon><Microphone /></el-icon>
+              <el-icon>
+                <Microphone />
+              </el-icon>
               {{ t('templateList.voiceGuide') }}
             </div>
 
@@ -87,31 +98,11 @@
 
           <div class="card-footer">
             <el-button type="primary" round @click="handleStartForm(item)">
-              <el-icon><Microphone /></el-icon>
+              <el-icon>
+                <Microphone />
+              </el-icon>
               {{ t('templateList.voiceFill') }}
             </el-button>
-
-            <!-- <div class="footer-actions">
-              <el-dropdown trigger="click">
-                <el-button circle>
-                  <el-icon><MoreFilled /></el-icon>
-                </el-button>
-
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleToggleStatus(item)">
-                      <el-icon><Switch /></el-icon>
-                      {{ item.status === 1 ? t('templateList.disable') : t('templateList.enable') }}
-                    </el-dropdown-item>
-
-                    <el-dropdown-item type="danger" divided @click="handleDeleteTemplate(item)">
-                      <el-icon><Delete /></el-icon>
-                      {{ t('templateList.deleteTemplate') }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div> -->
           </div>
         </div>
       </TransitionGroup>
@@ -174,10 +165,6 @@ const versionList = ref<any[]>([]);
 
 const categories = ref([] as any[]);
 
-const onClickLeft = () => {
-  router.back();
-};
-
 const filteredTemplates = computed(() => {
   let list = templates.value;
 
@@ -225,37 +212,9 @@ function formatDate(date: string) {
   return date ? dayjs(date).format('MM-DD HH:mm') : '';
 }
 
-// async function handleToggleStatus(item: Template) {
-//   const newStatus = item.status === 1 ? 0 : 1;
-//   const actionText = newStatus === 1 ? t('templateList.enable') : t('templateList.disable');
-
-//   await ElMessageBox.confirm(
-//     t('templateList.message.toggleConfirm', { action: actionText }),
-//     t('templateList.message.tips'),
-//   );
-
-//   await api.voiceForm.toggleTemplateStatus(item.id, newStatus);
-
-//   ElMessage.success(t('templateList.message.toggleSuccess', { action: actionText }));
-
-//   loadTemplates();
-// }
-
-// async function handleDeleteTemplate(item: Template) {
-//   await ElMessageBox.confirm(
-//     t('templateList.message.deleteConfirm'),
-//     t('templateList.message.deleteTitle'),
-//     {
-//       type: 'warning',
-//     },
-//   );
-
-//   await api.voiceForm.deleteTemplate(item.id);
-
-//   ElMessage.success(t('templateList.message.deleteSuccess'));
-
-//   loadTemplates();
-// }
+const onClickLeft = () => {
+  router.back();
+};
 
 onMounted(() => {
   api.voiceForm.getFormType().then((res) => {
@@ -268,11 +227,34 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .template-list-page {
+  --el-color-primary: #f97316;
+  --el-color-primary-light-3: #fb923c;
+  --el-color-primary-light-5: #fdba74;
+  --el-color-primary-light-7: #fed7aa;
+  --el-color-primary-light-8: #ffedd5;
+  --el-color-primary-light-9: #fff7ed;
+  --el-color-primary-dark-2: #ea580c;
+
   width: 100%;
   min-height: 100%;
   padding: 4px;
   margin: 0 auto;
-  color: #1f2937;
+  color: #431407;
+  background: linear-gradient(180deg, #fffaf5 0%, #fff 42%);
+}
+
+/* 顶部导航 */
+:deep(.van-nav-bar) {
+  background: linear-gradient(135deg, #fb923c, #f97316);
+  box-shadow: 0 6px 18px rgb(249 115 22 / 22%);
+}
+
+:deep(.van-nav-bar .van-icon) {
+  color: #fff;
+}
+
+:deep(.van-nav-bar::after) {
+  border-bottom: none;
 }
 
 /* 搜索与分类区域 */
@@ -284,11 +266,10 @@ onMounted(() => {
   margin-bottom: 24px;
   background:
     linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(248 250 252 / 92%)),
-    radial-gradient(circle at top left, rgb(79 70 229 / 8%), transparent 36%);
-  border: 1px solid rgb(226 232 240 / 90%);
+    radial-gradient(circle at top left, rgb(249 115 22 / 12%), transparent 36%);
+  border: 1px solid rgb(254 215 170 / 82%);
   border-radius: 20px;
-  box-shadow: 0 14px 36px rgb(15 23 42 / 6%);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 36px rgb(154 52 18 / 8%);
 
   .search-input {
     margin-bottom: 16px;
@@ -297,18 +278,18 @@ onMounted(() => {
       min-height: 46px;
       background: rgb(255 255 255 / 95%);
       border-radius: 14px;
-      box-shadow: 0 0 0 1px rgb(226 232 240 / 95%);
+      box-shadow: 0 0 0 1px rgb(254 215 170 / 95%);
       transition: all 0.25s ease;
     }
 
     :deep(.el-input__wrapper:hover) {
-      box-shadow: 0 0 0 1px rgb(99 102 241 / 32%);
+      box-shadow: 0 0 0 1px rgb(249 115 22 / 38%);
     }
 
     :deep(.el-input__wrapper.is-focus) {
       box-shadow:
-        0 0 0 1px rgb(79 70 229 / 75%),
-        0 10px 24px rgb(79 70 229 / 12%);
+        0 0 0 1px rgb(249 115 22 / 78%),
+        0 10px 24px rgb(249 115 22 / 14%);
     }
 
     :deep(.el-input__inner) {
@@ -328,21 +309,21 @@ onMounted(() => {
       padding: 0 16px;
       font-weight: 600;
       background: #fff;
-      border-color: #e5e7eb;
+      border-color: #fed7aa;
       border-radius: 999px;
       transition: all 0.22s ease;
     }
 
     :deep(.el-button:hover) {
-      box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
+      box-shadow: 0 8px 18px rgb(154 52 18 / 10%);
       transform: translateY(-1px);
     }
 
     :deep(.el-button--primary) {
       color: #fff;
-      background: linear-gradient(135deg, #1677ff, #69b1ff);
+      background: linear-gradient(135deg, #fb923c, #f97316);
       border: none;
-      box-shadow: 0 10px 22px rgb(79 70 229 / 22%);
+      box-shadow: 0 10px 22px rgb(249 115 22 / 24%);
     }
   }
 }
@@ -357,7 +338,7 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 22px;
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     grid-template-columns: 1fr;
     gap: 16px;
   }
@@ -376,9 +357,9 @@ onMounted(() => {
       color-mix(in srgb, var(--card-color) 16%, transparent),
       transparent 36%
     );
-  border: 1px solid rgb(226 232 240 / 86%);
+  border: 1px solid rgb(254 215 170 / 76%);
   border-radius: 22px;
-  box-shadow: 0 12px 32px rgb(15 23 42 / 6%);
+  box-shadow: 0 12px 32px rgb(154 52 18 / 7%);
   transition:
     transform 0.28s ease,
     box-shadow 0.28s ease,
@@ -406,8 +387,8 @@ onMounted(() => {
   }
 
   &:hover {
-    border-color: color-mix(in srgb, var(--card-color) 34%, #e5e7eb);
-    box-shadow: 0 22px 46px rgb(15 23 42 / 11%);
+    border-color: color-mix(in srgb, var(--card-color) 38%, #fed7aa);
+    box-shadow: 0 22px 46px rgb(154 52 18 / 14%);
     transform: translateY(-5px);
   }
 
@@ -471,7 +452,7 @@ onMounted(() => {
       font-size: 18px;
       font-weight: 800;
       line-height: 1.35;
-      color: #0f172a;
+      color: #431407;
       letter-spacing: -0.01em;
       white-space: nowrap;
     }
@@ -483,8 +464,16 @@ onMounted(() => {
 
       :deep(.el-tag) {
         font-weight: 600;
-        border: none;
+        color: #c2410c;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
         border-radius: 999px;
+      }
+
+      :deep(.el-tag--info) {
+        color: #9a3412;
+        background: #ffedd5;
+        border-color: #fdba74;
       }
     }
   }
@@ -499,7 +488,7 @@ onMounted(() => {
     -webkit-line-clamp: 2;
     font-size: 13px;
     line-height: 1.7;
-    color: #64748b;
+    color: #78716c;
     -webkit-box-orient: vertical;
   }
 
@@ -518,10 +507,10 @@ onMounted(() => {
       padding: 6px 10px;
       font-size: 12px;
       font-weight: 600;
-      color: #64748b;
-      background: #f8fafc;
+      color: #78716c;
+      background: #fff7ed;
       border-radius: 999px;
-      box-shadow: inset 0 0 0 1px #edf2f7;
+      box-shadow: inset 0 0 0 1px #ffedd5;
 
       .el-icon {
         color: var(--card-color);
@@ -535,9 +524,9 @@ onMounted(() => {
     padding: 12px 14px;
     margin-bottom: 16px;
     background:
-      linear-gradient(135deg, rgb(240 253 244 / 98%), rgb(236 253 245 / 86%)),
-      radial-gradient(circle at top right, rgb(34 197 94 / 12%), transparent 38%);
-    border: 1px solid rgb(34 197 94 / 14%);
+      linear-gradient(135deg, rgb(255 247 237 / 98%), rgb(255 237 213 / 88%)),
+      radial-gradient(circle at top right, rgb(249 115 22 / 14%), transparent 38%);
+    border: 1px solid rgb(249 115 22 / 18%);
     border-radius: 16px;
 
     .speech-label {
@@ -547,7 +536,7 @@ onMounted(() => {
       margin-bottom: 6px;
       font-size: 12px;
       font-weight: 800;
-      color: #16a34a;
+      color: #ea580c;
     }
 
     .speech-text {
@@ -556,7 +545,7 @@ onMounted(() => {
       -webkit-line-clamp: 2;
       font-size: 12px;
       line-height: 1.65;
-      color: #475569;
+      color: #57534e;
       -webkit-box-orient: vertical;
     }
   }
@@ -569,7 +558,7 @@ onMounted(() => {
     justify-content: space-between;
     padding-top: 16px;
     margin-top: auto;
-    border-top: 1px dashed #e5e7eb;
+    border-top: 1px dashed #fed7aa;
 
     .footer-actions {
       display: flex;
@@ -579,10 +568,10 @@ onMounted(() => {
       :deep(.el-button.is-circle) {
         width: 34px;
         height: 34px;
-        color: #475569;
-        background: #f8fafc;
+        color: #57534e;
+        background: #fff7ed;
         border: none;
-        box-shadow: inset 0 0 0 1px #e5e7eb;
+        box-shadow: inset 0 0 0 1px #fed7aa;
         transition: all 0.22s ease;
       }
 
@@ -595,15 +584,15 @@ onMounted(() => {
     }
 
     :deep(.el-button:hover) {
-      box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
+      box-shadow: 0 8px 18px rgb(154 52 18 / 10%);
       transform: translateY(-1px);
     }
 
     :deep(.el-button--primary) {
       color: #fff;
-      background: linear-gradient(135deg, #1677ff, #69b1ff);
+      background: linear-gradient(135deg, #fb923c, #f97316);
       border: none;
-      box-shadow: 0 10px 22px rgb(79 70 229 / 22%);
+      box-shadow: 0 10px 22px rgb(249 115 22 / 24%);
     }
   }
 }
@@ -612,8 +601,8 @@ onMounted(() => {
 :deep(.el-empty) {
   padding: 44px 0;
   margin-top: 52px;
-  background: rgb(248 250 252 / 72%);
-  border: 1px dashed #dbe3ef;
+  background: rgb(255 247 237 / 78%);
+  border: 1px dashed #fdba74;
   border-radius: 22px;
 }
 
@@ -637,16 +626,30 @@ onMounted(() => {
 :deep(.el-dialog__header) {
   padding: 20px 24px 14px;
   margin-right: 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #ffedd5;
 }
 
 :deep(.el-dialog__title) {
   font-weight: 800;
-  color: #0f172a;
+  color: #431407;
 }
 
 :deep(.el-dialog__body) {
   padding: 22px 24px 26px;
+}
+
+:deep(.el-timeline-item__node) {
+  background-color: #f97316;
+}
+
+:deep(.el-timeline-item__tail) {
+  border-left-color: #fed7aa;
+}
+
+:deep(.el-dialog .el-tag) {
+  color: #c2410c;
+  background: #fff7ed;
+  border-color: #fed7aa;
 }
 
 .version-header {
@@ -658,7 +661,7 @@ onMounted(() => {
   .version-user {
     font-size: 13px;
     font-weight: 600;
-    color: #64748b;
+    color: #78716c;
   }
 }
 
@@ -666,7 +669,7 @@ onMounted(() => {
   margin: 0;
   font-size: 14px;
   line-height: 1.65;
-  color: #475569;
+  color: #57534e;
 }
 
 /* 列表过渡动画 */
@@ -686,7 +689,7 @@ onMounted(() => {
 }
 
 /* 移动端优化 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .template-list-page {
     padding: 0;
   }

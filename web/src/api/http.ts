@@ -15,6 +15,11 @@ interface Result<T = any> {
 }
 
 const baseUrl = ''; //http://192.168.1.144:8889';
+const aiPrefix = '/api/ai';
+const filePrefix = '/api/file/file';
+const ossPrefix = '/api/file/oss';
+const opcPrefix = '/api/opc';
+
 type TAxiosOption = {
   timeout: number;
   baseURL?: string;
@@ -229,3 +234,4 @@ class Http {
 }
 
 export default new Http(config);
+export { aiPrefix, filePrefix, ossPrefix, opcPrefix };

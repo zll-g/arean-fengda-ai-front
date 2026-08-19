@@ -76,9 +76,15 @@
 
         <el-table-column :label="t('recordList.table.source')" prop="source" width="80">
           <template #default="{ row }">
-            <el-icon v-if="row.source === 'voice'" color="#6366f1"><Microphone /></el-icon>
-            <el-icon v-else-if="row.source === 'inherit'" color="#10b981"><CopyDocument /></el-icon>
-            <el-icon v-else color="#9ca3af"><Edit /></el-icon>
+            <el-icon v-if="row.source === 'voice'" color="#6366f1">
+              <Microphone />
+            </el-icon>
+            <el-icon v-else-if="row.source === 'inherit'" color="#10b981">
+              <CopyDocument />
+            </el-icon>
+            <el-icon v-else color="#9ca3af">
+              <Edit />
+            </el-icon>
           </template>
         </el-table-column>
 
@@ -96,7 +102,13 @@
 
         <el-table-column :label="t('recordList.table.action')" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button text type="success" size="small" @click.stop="handleEdit(row)">
+            <el-button
+              v-if="row.status !== 'submitted'"
+              text
+              type="success"
+              size="small"
+              @click.stop="handleEdit(row)"
+            >
               {{ t('recordList.action.edit') }}
             </el-button>
 
@@ -105,10 +117,10 @@
             </el-button>
 
             <el-button
+              v-if="row.status !== 'submitted'"
               text
               type="danger"
               size="small"
-              :disabled="row.status === 'submitted'"
               @click.stop="handleDelete(row)"
             >
               {{ t('recordList.action.delete') }}
@@ -137,7 +149,9 @@
 
           <div class="card-bottom-row">
             <span class="card-template">
-              <el-icon><Document /></el-icon>
+              <el-icon>
+                <Document />
+              </el-icon>
               {{ record.templateName }}
             </span>
 
@@ -146,17 +160,23 @@
 
           <div class="card-source">
             <template v-if="record.source === 'voice'">
-              <el-icon><Microphone /></el-icon>
+              <el-icon>
+                <Microphone />
+              </el-icon>
               <span>{{ t('recordList.source.voice') }}</span>
             </template>
 
             <template v-else-if="record.source === 'inherit'">
-              <el-icon><CopyDocument /></el-icon>
+              <el-icon>
+                <CopyDocument />
+              </el-icon>
               <span>{{ t('recordList.source.inherit') }}</span>
             </template>
 
             <template v-else>
-              <el-icon><Edit /></el-icon>
+              <el-icon>
+                <Edit />
+              </el-icon>
               <span>{{ t('recordList.source.manual') }}</span>
             </template>
           </div>
@@ -349,7 +369,6 @@ onMounted(() => {
   box-shadow:
     0 16px 40px rgb(126 72 24 / 8%),
     0 0 0 1px rgb(255 255 255 / 70%) inset;
-  backdrop-filter: blur(10px);
 
   .filter-input {
     margin-bottom: 14px;
@@ -436,7 +455,7 @@ onMounted(() => {
       color: #b09b8c;
     }
 
-    @media (width <= 768px) {
+    @media (width <=768px) {
       flex-direction: column;
 
       :deep(.el-select) {
@@ -460,7 +479,7 @@ onMounted(() => {
     0 16px 42px rgb(126 72 24 / 7%),
     0 0 0 1px rgb(255 255 255 / 70%) inset;
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     padding: 16px;
     border-radius: 18px;
   }
@@ -832,7 +851,7 @@ onMounted(() => {
 }
 
 /* 移动端细节 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .record-list-page {
     padding: 0;
   }

@@ -27,6 +27,7 @@ export default {
     qaManage: '知识问答管理',
     knowledgeBaseManage: '知识库管理',
     splitManagement: '分片管理',
+    usageStats: '运营统计',
     knowledgeBase: '知识库',
     knowledgeBaseQa: '知识库问答',
     fileManagement: '文件管理',
@@ -46,6 +47,50 @@ export default {
     neuralNetworkPrediction: '神经网络预测',
     OPCUAServicRealTimeMonitoring: 'OPCUA 服务实时监控',
     organizationInfo: '组织信息',
+    recommend: '智能推荐',
+  },
+  homeDashboard: {
+    knowledgeTrend: '知识库问答数量趋势',
+    last30Days: '近30天',
+    plantVisualization: '二期公用系统TCS画面',
+    unitLoad: '机组负荷',
+    dailyGeneration: '全厂日发电量：',
+    dataQueryTrend: '智能问数数量趋势',
+    recommendStatistics: '智能推荐统计',
+    noRecommendData: '暂无推荐统计数据',
+
+    summary: {
+      defectTicketTitle: '缺陷单填报数量',
+      totalSubmitted: '累计填报',
+      knowledgeQaTitle: '知识问答次数',
+      todayQa: '今日问答',
+      dataQueryTitle: '智能问数次数',
+      todayQuery: '今日问数',
+      documentReferenceTitle: '文档引用次数',
+      totalReferences: '累计引用',
+      fileTotalTitle: '文件总数',
+      fileTotalDescription: '文件总数',
+    },
+
+    units: {
+      unit1Load: '1号机组负荷',
+      unit1Chart: '1#机组',
+      unit2Load: '2号机组负荷',
+      unit2Chart: '2#机组',
+      unit5Load: '5号机组负荷',
+      unit5Chart: '5#机组',
+      unit6Load: '6号机组负荷',
+      unit6Chart: '6#机组',
+    },
+
+    tooltip: {
+      count: '次数：{count}',
+      unitLoad: '机组负荷：',
+    },
+
+    measurementUnit: {
+      tenThousandKwh: '万KWH',
+    },
   },
   chatSidebar: {
     newChat: '新建对话',
@@ -81,11 +126,16 @@ export default {
     you: '你',
     sendFailed: '消息发送失败',
     retry: '重试',
+    prevVariant: '上一版本',
+    nextVariant: '下一版本',
   },
   messageList: {
     aiThinking: 'AI 正在思考...',
   },
   welcomeScreen: {
+    title: '丰达智能知识问答助手',
+    subtitle: '基于企业知识库，为您快速检索并解答相关问题。',
+    quickStartTitle: '您可以这样问',
     features: {
       smartChat: {
         title: '智能对话',
@@ -104,7 +154,6 @@ export default {
         description: '阅读、总结、翻译各类文档',
       },
     },
-    quickStartTitle: '试试这些问题',
     suggestions: {
       currentTime: '现在几点',
       machineLearning: '解释一下什么是机器学习',
@@ -254,6 +303,33 @@ export default {
       autoBackward: '时序逆向自减中...',
       apiBusinessCode: '接口返回业务码 {code}',
     },
+
+    fault: {
+      title: '设备故障预警',
+      desc: '实时监测设备运行指标，异常告警与故障记录',
+      month: '年月',
+      metricType: '指标类型',
+      allMetrics: '全部指标',
+      refresh: '刷新',
+      loading: '正在加载',
+      empty: '暂无故障记录',
+      totalRecords: '共 {count} 条记录',
+      table: {
+        alarmTime: '告警时间',
+        metricType: '指标类型',
+        metricName: '监测指标',
+        level: '等级',
+        currentValue: '当前值',
+        normalRange: '正常范围',
+        detail: '故障详情',
+        fault: '故障',
+        warning: '预警',
+      },
+      pagination: {
+        prev: '上一页',
+        next: '下一页',
+      },
+    },
   },
   organizationInfo: {
     title: '组织信息',
@@ -274,6 +350,34 @@ export default {
     enterFullscreen: '全屏观看',
     exitFullscreen: '退出全屏',
     fullscreenFailed: '全屏切换失败:',
+  },
+
+  recommendPage: {
+    pageTitle: '推荐管理',
+    filter: {
+      type: '推荐类型',
+      typePlaceholder: '请选择推荐类型',
+    },
+    table: {
+      index: '序号',
+      type: '推荐类型',
+      content: '推荐内容',
+      user: '用户',
+      createTime: '创建时间',
+    },
+    type: {
+      safetyMeasures: '安措',
+      dangerPoint: '危险点',
+      defectTicket: '缺陷单',
+      checkTicket: '核票',
+      checkTickets: '核票',
+      robotDog: '机器狗',
+    },
+    empty: '暂无推荐数据',
+    message: {
+      loadTypeFailed: '获取推荐类型失败：',
+      loadListFailed: '获取推荐列表失败：',
+    },
   },
 
   fileManagement: {
@@ -317,6 +421,9 @@ export default {
       uploading: '文件上传中...',
       dragText: '拖拽文件到此处上传',
       supportedFormatsText: '支持 {formats} 格式文件',
+      waiting: '等待中',
+      done: '完成',
+      failed: '失败',
     },
 
     embed: {
@@ -385,6 +492,7 @@ export default {
       versionNumber: '版本号',
       versionUsed: '应用版本',
       versionUpdate: '版本更新',
+      preview: '预览',
       rebuildIndex: '重建索引',
       underReconstruction: '重建中',
       status: '状态',
@@ -394,11 +502,12 @@ export default {
     },
 
     splitStrategy: {
-      recursive: '递归分片策略',
-      paragraph: '段落分片策略',
-      sentence: '句子分片策略',
-      semantic: '语义分片策略',
-      fixed: '固定大小分片策略',
+      recursive: '递归分片',
+      custom: '自定义分片',
+      paragraph: '段落分片',
+      sentence: '句子分片',
+      semantic: '语义分片',
+      fixed: '固定大小分片',
     },
 
     status: {
@@ -446,6 +555,10 @@ export default {
       create: '创建知识库',
 
       splitOptions: {
+        custom: {
+          label: '自定义分片策略 (推荐)',
+          desc: '标题与正文绑定切分并携带层级路径上下文，火电公文场景命中更准。',
+        },
         recursive: {
           label: '递归分片策略 (推荐)',
           desc: '自动识别段落结构，语义完整，块大小约500-1500字符。',
@@ -489,10 +602,89 @@ export default {
       },
     },
   },
+  usageStats: {
+    title: '运营统计',
+    refresh: '刷新',
+    last7Days: '近 7 天',
+    last30Days: '近 30 天',
+    startDate: '开始日期',
+    endDate: '结束日期',
+    card: {
+      todayEvents: '今日事件',
+      rangeTotal: '区间累计:',
+      todayActiveUsers: '今日活跃用户',
+      chatRequests: '对话请求数(区间)',
+      chatRequestsSub: '问答 + 问数 + 文档分析',
+      successRate: '对话成功率',
+      avgLatency: '平均响应耗时',
+      chatOnly: '仅对话类事件口径',
+      totalTokens: 'Token 总消耗',
+      tokenSub: '问数链路未聚合,实际更高',
+      docUploads: '文档上传',
+      docUploadsSub: '含批量与文件管理嵌入',
+      kbCreates: '新建知识库',
+      kbCreatesSub: '',
+    },
+    trendTitle: '使用趋势',
+    eventsLine: '事件量',
+    usersLine: '活跃用户',
+    featureDistTitle: '功能使用分布',
+    statusDistTitle: '对话状态分布',
+    userRankTitle: '用户活跃排行 TOP10',
+    rankCol: '排名',
+    userCol: '用户',
+    worknoCol: '工号',
+    eventsCol: '事件数',
+    chatRequestsCol: '对话数',
+    tokensCol: 'Token',
+    lastActiveCol: '最近活跃',
+    detailTitle: '使用明细',
+    eventTypeFilter: '事件类型',
+    featureFilter: '功能',
+    statusFilter: '状态',
+    userKwPlaceholder: '账号 / 工号 / 用户ID',
+    search: '查询',
+    timeCol: '时间',
+    typeCol: '事件类型',
+    featureCol: '功能',
+    statusCol: '状态',
+    latencyCol: '耗时',
+    questionCol: '提问内容',
+    detailCol: '附加信息',
+    noData: '暂无数据',
+    anonymous: '匿名用户',
+    statusSuccess: '成功',
+    statusError: '失败',
+    statusInterrupted: '中断',
+    noPermission: '无运营统计访问权限',
+    type: {
+      kbAsk: '知识问答',
+      kbRegenerate: '问答重新生成',
+      diAsk: '智能问数',
+      diRegenerate: '问数重新回答',
+      docAnalysis: '文档分析',
+      docUpload: '文档上传',
+      kbCreate: '新建知识库',
+      unknown: '未知',
+    },
+    feature: {
+      knowledgeQa: '知识问答',
+      deepSearch: '深度搜索',
+      docAnalysis: '文档分析',
+      webSearch: '联网搜索',
+      deepResearch: '深度研究',
+      openApi: '开放接口',
+      nl2sql: '智能问数',
+      document: '文档',
+      knowledgeBase: '知识库',
+      unknown: '其它',
+    },
+  },
   splitManagement: {
     pageTitle: '分片管理',
     back: '返回知识库',
     document: '文档',
+    invalidDocument: '无效的文档入口，请从知识库文档列表进入分片管理',
     docStatus: '文档状态',
     segmentUnit: '块',
     // 当前生效配置
@@ -606,6 +798,15 @@ export default {
       fixed: '按固定字符数切分,适合非结构化文本或代码片段',
     },
   },
+  splitConfigForm: {
+    enable: '自定义分片配置',
+    followDefaultTip: '不配置时，本次上传文档跟随知识库级/全局默认策略切分',
+    scopeTip: '仅对本次上传的文档生效，先于分片与向量化执行；上传后仍可在分片管理中预览与重切',
+    overlapRule: '重叠尺寸必须小于切块尺寸',
+    configButton: '分片配置',
+    configuredTag: '已自定义分片',
+    clear: '清除',
+  },
   dataQueryChat: {
     newChat: '新建对话',
     newConversation: '新对话',
@@ -645,8 +846,8 @@ export default {
     },
 
     placeholder: {
-      multi: '输入跨数据源查询，例如：对比线上和线下上月的销售额',
-      single: '输入您的问题，例如：上个月各区域的销售额是多少？',
+      multi: '输入跨数据源查询，例如：热部件都有哪些？',
+      single: '输入您的问题，例如：全厂日发电量',
     },
 
     hint: {
@@ -662,24 +863,21 @@ export default {
       selectDatasourceFirst: '请先选择数据源',
       loadGroupFailed: '加载分组详情失败',
       canceled: '已取消查询',
-      stopped: '已停止生成，部分内容已保存',
-      regenerateUnavailable: '当前消息暂不支持重新回答',
-      switchVariantFailed: '切换回答版本失败，请重试',
       feedbackThanks: '感谢反馈！我们会持续优化',
     },
 
     sampleQuestions: {
       single: [
-        '上个月的总销售额是多少？',
-        '各区域的订单数量排名',
-        '近7天每天的新增用户数趋势',
-        '销售额 TOP10 的产品',
+        '最近1小时6号机组EMCC电源1(主机厂配供)断路器电度',
+        '5机组当前负荷',
+        '6机组当前负荷',
+        '全厂日发电量',
       ],
       multi: [
-        '对比各数据源上个月的总销售额',
-        '汇总所有数据源的订单量',
-        '线上和线下的客单价对比',
-        '各渠道近30天销售趋势对比',
+        '最近电子围栏报警触发的类型都有哪些？',
+        '今天安规检测人脸识别人数有多少？',
+        '热部件都有哪些？',
+        '当前时间？',
       ],
     },
   },
@@ -923,7 +1121,7 @@ export default {
   masterData: {
     source: {
       product: '丰达主数据',
-      supplier: '机组主数据',
+      user: '用户主数据',
       gms: 'gms主数据',
     },
 
@@ -979,8 +1177,8 @@ export default {
       save: '保存',
 
       codePlaceholder: '如 P006',
-      namePlaceholder: '如 机组数据',
-      aliasesPlaceholder: '逗号分隔，如：二号机组,五号机组',
+      namePlaceholder: '如 用户名',
+      aliasesPlaceholder: '逗号分隔，如：用户1,用户2',
     },
 
     validate: {
@@ -1169,8 +1367,8 @@ export default {
       wizardPromptPlaceholder: '向导模式下对用户的提问话术',
       voiceAliasTip: '用户语音中可能使用的不同说法',
 
-      productMasterData: '商品主数据',
-      supplierMasterData: '供应商主数据',
+      productMasterData: '丰达主数据',
+      userMasterData: '用户主数据',
     },
 
     fieldType: {

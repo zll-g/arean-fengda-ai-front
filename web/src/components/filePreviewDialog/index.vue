@@ -1,11 +1,9 @@
 <template>
   <el-dialog
     v-model="visible"
-    width="1200px"
-    top="50px"
+    width="80vw"
     :title="previewFileName || '文件预览'"
     destroy-on-close
-    class="preview-dialog"
     @closed="resetPreview"
   >
     <div v-loading="previewLoading" class="preview-body">
@@ -13,8 +11,12 @@
         v-if="previewFile"
         :key="viewerKey"
         :file="previewFile"
-        :options="{ preset: officePreset, toolbar: { print: false, exportHtml: false } }"
-        class="file-viewer-wrap"
+        :options="{
+          preset: officePreset,
+          rendererMode: 'replace',
+          theme: 'light',
+          toolbar: { print: false, exportHtml: false },
+        }"
       />
     </div>
   </el-dialog>
@@ -23,15 +25,17 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { ref } from 'vue';
-import officePreset from '@file-viewer/preset-office';
+import officePreset from '@file-viewer/preset-all';
 interface FileRecord {
   id: string;
   fileOriginalName?: string;
   fileName?: string;
+  originalName?: string;
   fileSuffix?: string;
   fileType?: string;
   fileUrl?: string;
   filePolicyUrl?: string;
+  filePath?: string;
 }
 
 const visible = ref(false);
@@ -94,6 +98,7 @@ const resetPreview = () => {
 
 const getPreviewUrl = (row: FileRecord) => {
   if (row.filePolicyUrl) return row.filePolicyUrl;
+  if (row.filePath) return row.filePath;
   if (/^https?:\/\//.test(row.fileUrl || '')) return row.fileUrl || '';
   if (row.fileUrl) return `${window.location.origin}${row.fileUrl}`;
   return '';
@@ -101,7 +106,7 @@ const getPreviewUrl = (row: FileRecord) => {
 
 const getPreviewFileName = (row: FileRecord) => {
   const suffix = getRecordSuffix(row);
-  const name = row.fileOriginalName || row.fileName || '预览文件';
+  const name = row.fileOriginalName || row.originalName || row.fileName || '预览文件';
 
   if (!suffix || name.toLowerCase().endsWith(`.${suffix}`)) return name;
   return `${name}.${suffix}`;
@@ -111,6 +116,7 @@ const getRecordSuffix = (row: FileRecord) => {
   return (
     row.fileSuffix ||
     getSuffixByName(row.fileOriginalName || '') ||
+    getSuffixByName(row.originalName || '') ||
     getSuffixByName(row.fileName || '')
   ).toLowerCase();
 };
@@ -163,39 +169,15 @@ defineExpose({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .preview-body {
-  box-sizing: border-box;
-  width: 1000px;
-  height: 850px;
-  margin: 0 auto;
-  overflow: auto;
-  background: #fff;
-  border: 1px solid #edf2fb;
-  border-radius: 12px;
+  width: 100%;
+  height: 70vh;
+  min-height: 0;
 }
-
-:deep(.preview-dialog .el-dialog) {
-  border-radius: 18px;
-}
-
-:deep(.preview-dialog .el-dialog__header) {
-  padding: 22px 24px 10px;
-}
-
-:deep(.preview-dialog .el-dialog__title) {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1d2b4f;
-}
-
-:deep(.preview-dialog .el-dialog__body) {
-  padding: 16px 24px 24px;
-}
-
-:deep(.file-viewer-wrap .docx),
-:deep(.file-viewer-wrap .docx section) {
-  height: auto !important;
-  min-height: auto !important;
+</style>
+<style>
+.docx {
+  width: 850px !important;
 }
 </style>

@@ -130,5 +130,6 @@ export {
   Shield,
   Bell,
   BellOff,
+  BookPlus,
   // @ts-ignore
 } from 'lucide-vue-next';

@@ -3,11 +3,14 @@
 </template>
 
 <script setup lang="ts">
+import { ElMessage } from 'element-plus';
 import { onMounted } from 'vue';
+import { aiPrefix } from '@/api/http';
+
 const login = async () => {
   console.log(111);
   try {
-    const resp = await fetch(`/api/gms/auth/config`);
+    const resp = await fetch(`${aiPrefix}/gms/auth/config`);
     const result = await resp.json();
 
     if (result.code === '200') {
@@ -18,11 +21,11 @@ const login = async () => {
       window.location.href = authorizeUrl;
     } else {
       console.error('获取授权 URL 失败：', result.message);
-      alert('登录配置获取失败，请联系管理员');
+      ElMessage.error('登录配置获取失败，请联系管理员');
     }
   } catch (e) {
     console.error('请求后端失败：', e);
-    alert('网络错误，请稍后重试');
+    ElMessage.error('网络错误，请稍后重试');
   }
 };
 onMounted(() => {

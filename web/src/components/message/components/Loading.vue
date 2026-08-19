@@ -34,7 +34,6 @@ const props = defineProps({
   width: 100%;
   height: 100%;
   background: rgb(255 255 255 / 80%);
-  backdrop-filter: blur(2px);
 }
 
 .spinner-box {

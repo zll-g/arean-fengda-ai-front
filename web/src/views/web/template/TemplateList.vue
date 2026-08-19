@@ -25,7 +25,9 @@
         </el-button>
 
         <el-button type="primary" @click="router.push('/web/template/create')">
-          <el-icon><Plus /></el-icon>
+          <el-icon>
+            <Plus />
+          </el-icon>
           {{ t('templateList.createTemplate') }}
         </el-button>
       </div>
@@ -42,7 +44,9 @@
         >
           <!-- 置顶标记 -->
           <div v-if="item.pinned" class="pin-badge">
-            <el-icon :size="12"><Top /></el-icon>
+            <el-icon :size="12">
+              <Top />
+            </el-icon>
             {{ t('templateList.pinned') }}
           </div>
 
@@ -69,12 +73,16 @@
 
           <div class="card-stats">
             <div class="stat-item">
-              <el-icon><Edit /></el-icon>
+              <el-icon>
+                <Edit />
+              </el-icon>
               <span>{{ t('templateList.fieldCount', { count: item.fieldCount || 0 }) }}</span>
             </div>
 
             <div class="stat-item">
-              <el-icon><Clock /></el-icon>
+              <el-icon>
+                <Clock />
+              </el-icon>
               <span>{{ formatDate(item.createdAt) }}</span>
             </div>
           </div>
@@ -82,7 +90,9 @@
           <!-- 示范话术 -->
           <div v-if="item.sampleSpeech" class="card-speech">
             <div class="speech-label">
-              <el-icon><Microphone /></el-icon>
+              <el-icon>
+                <Microphone />
+              </el-icon>
               {{ t('templateList.voiceGuide') }}
             </div>
 
@@ -91,14 +101,18 @@
 
           <div class="card-footer">
             <el-button type="primary" round @click="handleStartForm(item)">
-              <el-icon><Microphone /></el-icon>
+              <el-icon>
+                <Microphone />
+              </el-icon>
               {{ t('templateList.voiceFill') }}
             </el-button>
 
             <div class="footer-actions">
               <el-dropdown trigger="click">
                 <el-button circle>
-                  <el-icon><MoreFilled /></el-icon>
+                  <el-icon>
+                    <MoreFilled />
+                  </el-icon>
                 </el-button>
 
                 <template #dropdown>
@@ -109,7 +123,9 @@
                     </el-dropdown-item> -->
 
                     <el-dropdown-item @click="handleEditTemplate(item)">
-                      <el-icon><Edit /></el-icon>
+                      <el-icon>
+                        <Edit />
+                      </el-icon>
                       {{ t('templateList.editTemplate') }}
                     </el-dropdown-item>
 
@@ -119,7 +135,9 @@
                     </el-dropdown-item> -->
 
                     <el-dropdown-item type="danger" divided @click="handleDeleteTemplate(item)">
-                      <el-icon><Delete /></el-icon>
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
                       {{ t('templateList.deleteTemplate') }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -300,10 +318,13 @@ onMounted(() => {
 <style lang="scss" scoped>
 .template-list-page {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   padding: 4px;
   margin: 0 auto;
+  overflow-y: auto;
   color: #4a382c;
+  scrollbar-color: #e7b889 transparent;
+  scrollbar-width: thin;
   background:
     radial-gradient(circle at 0 0, rgb(255 138 38 / 8%) 0%, transparent 30%),
     linear-gradient(180deg, #fffaf5 0%, #fff 280px);
@@ -325,7 +346,6 @@ onMounted(() => {
   box-shadow:
     0 14px 36px rgb(126 72 24 / 8%),
     0 0 0 1px rgb(255 255 255 / 70%) inset;
-  backdrop-filter: blur(10px);
 
   .search-input {
     margin-bottom: 16px;
@@ -439,7 +459,7 @@ onMounted(() => {
   gap: 22px;
   align-items: stretch;
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     grid-template-columns: 1fr;
     gap: 16px;
   }
@@ -762,7 +782,6 @@ onMounted(() => {
 /* Loading */
 :deep(.el-loading-mask) {
   background: rgb(255 250 245 / 78%);
-  backdrop-filter: blur(2px);
 }
 
 :deep(.el-loading-spinner .path) {
@@ -904,7 +923,7 @@ onMounted(() => {
 }
 
 /* 移动端 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .template-list-page {
     padding: 0;
   }
@@ -944,7 +963,7 @@ onMounted(() => {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .search-bar {
     padding: 14px;
 

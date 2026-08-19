@@ -4,7 +4,9 @@
     <div class="form-header">
       <div class="header-info">
         <el-button text @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>
         </el-button>
         <div>
           <h2 class="form-title">
@@ -21,24 +23,30 @@
       <div class="header-actions desktop-only">
         <el-tooltip content="撤销 (Ctrl+Z)">
           <el-button :disabled="!canUndo" circle @click="handleUndo">
-            <el-icon><RefreshLeft /></el-icon>
+            <el-icon>
+              <RefreshLeft />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="重做 (Ctrl+Y)">
           <el-button :disabled="!canRedo" circle @click="handleRedo">
-            <el-icon><RefreshRight /></el-icon>
+            <el-icon>
+              <RefreshRight />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="智能校验">
           <el-button circle @click="handleValidate">
-            <el-icon><CircleCheck /></el-icon>
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
           </el-button>
         </el-tooltip>
-        <el-tooltip content="语音回读">
+        <!-- <el-tooltip content="语音回读">
           <el-button circle @click="handleReadback">
             <el-icon><VideoPlay /></el-icon>
           </el-button>
-        </el-tooltip>
+        </el-tooltip> -->
       </div>
     </div>
 
@@ -52,7 +60,7 @@
         :percentage="formStore.completionRate"
         :stroke-width="8"
         :show-text="false"
-        :color="formStore.completionRate === 100 ? '#10b981' : '#6366f1'"
+        :color="formStore.completionRate === 100 ? '#22c55e' : '#ff8a26'"
       />
     </div>
 
@@ -84,8 +92,13 @@
                 @change="onFieldChange(field.fieldCode)"
               >
                 <template v-if="field.masterDataCode" #append>
-                  <el-button @click="openMasterDataPicker(field)">
-                    <el-icon><Search /></el-icon>
+                  <el-button
+                    :disabled="field.masterDataCode !== 'gms'"
+                    @click="openMasterDataPicker(field)"
+                  >
+                    <el-icon>
+                      <Search />
+                    </el-icon>
                   </el-button>
                 </template>
               </el-input>
@@ -164,7 +177,9 @@
 
               <!-- 校验警告 -->
               <div v-if="getFieldWarning(field.fieldCode)" class="field-warning-msg">
-                <el-icon><WarningFilled /></el-icon>
+                <el-icon>
+                  <WarningFilled />
+                </el-icon>
                 {{ getFieldWarning(field.fieldCode) }}
               </div>
             </div>
@@ -180,7 +195,10 @@
             :disabled="formStore.completionRate < 100"
             @click="handleConfirm"
           >
-            <el-icon><CircleCheck /></el-icon> 确认表单
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
+            确认表单
           </el-button>
           <el-button
             type="success"
@@ -189,7 +207,10 @@
             :disabled="formStore.formData?.status !== 'confirmed'"
             @click="handleSubmit"
           >
-            <el-icon><Upload /></el-icon> 提交
+            <el-icon>
+              <Upload />
+            </el-icon>
+            提交
           </el-button>
         </div>
       </div>
@@ -199,7 +220,9 @@
         <div class="chat-header">
           <h3>语音助手</h3>
           <el-button v-if="isMobile" text @click="showChat = !showChat">
-            <el-icon><component :is="showChat ? 'ArrowDown' : 'ArrowUp'" /></el-icon>
+            <el-icon>
+              <component :is="showChat ? 'ArrowDown' : 'ArrowUp'" />
+            </el-icon>
           </el-button>
         </div>
 
@@ -208,7 +231,9 @@
           v-if="voiceStore.conversationHistory.length === 0 && formStore.template?.sampleSpeech"
           class="guide-banner"
         >
-          <el-icon :size="20"><InfoFilled /></el-icon>
+          <el-icon :size="20">
+            <InfoFilled />
+          </el-icon>
           <div>
             <p class="guide-title">语音引导</p>
             <p class="guide-text">{{ formStore.template.sampleSpeech }}</p>
@@ -224,8 +249,12 @@
             :class="msg.role"
           >
             <div class="message-avatar">
-              <el-icon v-if="msg.role === 'user'"><User /></el-icon>
-              <el-icon v-else><Cpu /></el-icon>
+              <el-icon v-if="msg.role === 'user'">
+                <User />
+              </el-icon>
+              <el-icon v-else>
+                <Cpu />
+              </el-icon>
             </div>
             <div class="message-body">
               <div class="message-content">{{ msg.content }}</div>
@@ -236,7 +265,10 @@
                 size="small"
                 @click="audioPlayer.playBase64(msg.audioBase64!)"
               >
-                <el-icon><VideoPlay /></el-icon> 播放
+                <el-icon>
+                  <VideoPlay />
+                </el-icon>
+                播放
               </el-button>
             </div>
           </div>
@@ -244,7 +276,9 @@
           <!-- 处理中 -->
           <div v-if="voiceStore.state === 'processing'" class="message-item assistant">
             <div class="message-avatar">
-              <el-icon><Cpu /></el-icon>
+              <el-icon>
+                <Cpu />
+              </el-icon>
             </div>
             <div class="message-body">
               <div class="message-content typing">
@@ -268,7 +302,9 @@
             v-if="voiceStore.partialText || voiceStore.state === 'listening'"
             class="recognized-preview"
           >
-            <el-icon><Microphone /></el-icon>
+            <el-icon>
+              <Microphone />
+            </el-icon>
             <span>{{ voiceStore.partialText || '正在听...' }}</span>
           </div>
 
@@ -294,7 +330,9 @@
               @touchend.prevent="handleRecordStop"
             >
               <div class="btn-inner">
-                <el-icon v-if="!isRecording" :size="28"><Microphone /></el-icon>
+                <el-icon v-if="!isRecording" :size="28">
+                  <Microphone />
+                </el-icon>
                 <div v-else class="wave-bars">
                   <span v-for="i in 5" :key="i" class="voice-wave-bar" />
                 </div>
@@ -319,32 +357,40 @@
     </div>
 
     <!-- 移动端底部操作栏 -->
-    <div class="mobile-bottom-bar mobile-only">
-      <el-button :disabled="!canUndo" circle size="small" @click="handleUndo">
+    <!-- <div class="mobile-bottom-bar mobile-only">
+      <el-button @click="handleUndo" :disabled="!canUndo" circle size="small">
         <el-icon><RefreshLeft /></el-icon>
       </el-button>
-      <el-button :disabled="!canRedo" circle size="small" @click="handleRedo">
+      <el-button @click="handleRedo" :disabled="!canRedo" circle size="small">
         <el-icon><RefreshRight /></el-icon>
       </el-button>
-      <el-button circle size="small" @click="handleReadback">
+      <el-button @click="handleReadback" circle size="small">
         <el-icon><VideoPlay /></el-icon>
       </el-button>
-      <el-button type="primary" circle size="small" @click="showChat = !showChat">
+      <el-button type="primary" @click="showChat = !showChat" circle size="small">
         <el-icon><ChatDotRound /></el-icon>
       </el-button>
-    </div>
+    </div> -->
 
     <!-- 主数据选择弹窗 -->
     <MasterDataPicker
       v-model:visible="showMasterPicker"
       :source-code="pickerSourceCode"
+      :field-code="pickerTargetField"
       :source-label="pickerSourceLabel"
+      :input-value="fieldCodeValue"
       @select="handleMasterDataSelected"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  audioBase64?: string;
+}
 import { useMediaQuery } from '@vueuse/core';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
@@ -353,7 +399,7 @@ import { useVoiceStore } from '@/store/voiceStore';
 import { useAudioPlayer } from '@/composables/useAudioPlayer';
 import { useHotkeys } from '@/composables/useHotkeys';
 import MasterDataPicker from '@/components/MasterDataPicker.vue';
-import type { MasterDataItem, TemplateField } from '@/types';
+import type { TemplateField } from '@/types';
 import { computed, nextTick, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import dayjs from 'dayjs';
@@ -361,7 +407,7 @@ import api from '@/api';
 const router = useRouter();
 const route = useRoute();
 const isMobile = useMediaQuery('(max-width: 768px)');
-
+const fieldCodeValue = ref('');
 const formStore = useFormStore();
 const voiceStore = useVoiceStore();
 const audioPlayer = useAudioPlayer();
@@ -489,26 +535,31 @@ function isPriceField(field: TemplateField): boolean {
 }
 
 function onFieldChange(fieldCode: string) {
+  console.log(formStore.formValues[fieldCode], 222);
   // @ts-expect-error
   formStore.setFieldValue(fieldCode, formStore.formValues[fieldCode], 'manual');
+  fieldCodeValue.value = formStore.formValues[fieldCode];
 }
 
 function setFieldFromRecommend(fieldCode: string, val: string) {
   // @ts-expect-error
   formStore.setFieldValue(fieldCode, val, 'recommend');
+  fieldCodeValue.value = formStore.formValues[fieldCode];
 }
 
 function openMasterDataPicker(field: TemplateField) {
+  fieldCodeValue.value = formStore.formValues[field.fieldCode];
   pickerSourceCode.value = field.masterDataCode || '';
   pickerSourceLabel.value = field.fieldName;
   pickerTargetField.value = field.fieldCode;
+  console.log(pickerTargetField.value, 3333);
   showMasterPicker.value = true;
 }
 
-function handleMasterDataSelected(item: MasterDataItem) {
+function handleMasterDataSelected(item: any) {
   // 回填主数据
   // @ts-expect-error
-  formStore.setFieldValue(pickerTargetField.value, item.dataName, 'master_data');
+  formStore.setFieldValue(pickerTargetField.value, item.kksCode, 'master_data');
 
   // 回填关联字段
   if (item.dataValues) {
@@ -545,6 +596,9 @@ async function handleRecordStart() {
 async function handleRecordStop() {
   if (!isRecording.value) return;
 
+  // stopRecording 可能会清空 partialText，需要提前保存
+  const partialText = voiceStore.partialText?.trim() || '';
+
   voiceStore.stopRecording();
 
   const audioBlob = await stopAudioRecording();
@@ -554,20 +608,37 @@ async function handleRecordStop() {
     return;
   }
 
+  // 语音接口返回前，先展示一条临时用户消息
+  const userMessage = appendUserMessage(partialText || '语音消息（识别中...）');
+
   voiceStore.setProcessing('asr_processing', '正在识别语音...');
 
   try {
     const fd = new FormData();
+
     fd.append('audio', audioBlob, 'recording.wav');
     fd.append('templateId', String(templateId.value));
-    if (formStore.formData?.id) fd.append('formDataId', String(formStore.formData.id));
+
+    if (formStore.formData?.id) {
+      fd.append('formDataId', String(formStore.formData.id));
+    }
+
     fd.append('mode', voiceStore.mode);
-    if (voiceStore.mode === 'wizard') fd.append('wizardStep', String(voiceStore.wizardStep));
+
+    if (voiceStore.mode === 'wizard') {
+      fd.append('wizardStep', String(voiceStore.wizardStep));
+    }
+
     fd.append('currentValuesJson', JSON.stringify(formStore.formValues));
 
     const res = await api.voiceForm.processAudio(fd);
-    handlePipelineResult(res.data);
+
+    handlePipelineResult(res.data, userMessage);
   } catch (err: any) {
+    if (!partialText) {
+      userMessage.content = '语音消息（识别失败）';
+    }
+
     voiceStore.setError(err.message || '处理失败');
   }
 }
@@ -797,10 +868,34 @@ function writeString(view: DataView, offset: number, value: string) {
   }
 }
 
+function appendUserMessage(content: string) {
+  const message: ChatMessage = {
+    role: 'user',
+    content,
+    timestamp: Date.now(),
+  };
+
+  voiceStore.conversationHistory.push(message);
+  scrollToBottom();
+
+  return message;
+}
+
 async function handleTextSubmit() {
   const text = textInput.value.trim();
-  if (!text) return;
+
+  if (!text || voiceStore.state === 'processing') return;
+
   textInput.value = '';
+
+  // 立即显示发送内容
+  voiceStore.conversationHistory.push({
+    role: 'user',
+    content: text,
+    timestamp: Date.now(),
+  });
+
+  scrollToBottom();
 
   voiceStore.setProcessing('nlu_processing', '正在理解...');
 
@@ -814,29 +909,47 @@ async function handleTextSubmit() {
       currentValues: formStore.formValues,
       needTts: false,
     });
+
     handlePipelineResult(res.data);
   } catch (err: any) {
     voiceStore.setError(err.message || '处理失败');
   }
 }
 
-function handlePipelineResult(result: any) {
+function handlePipelineResult(result: any, userMessage?: ChatMessage) {
   if (!result.success) {
+    if (userMessage?.content === '语音消息（识别中...）') {
+      userMessage.content = '语音消息（识别失败）';
+    }
+
     voiceStore.setError(result.error || '处理失败');
     return;
   }
 
-  voiceStore.setResult(result.recognizedText || '', result.replyText || '', result.ttsAudioBase64);
+  // 语音识别完成后，替换临时文字
+  if (userMessage && result.recognizedText) {
+    userMessage.content = result.recognizedText;
+  }
+
+  /*
+   * 用户消息已经提前加入，所以 recognizedText 传空字符串，
+   * 避免 setResult 再添加一次用户消息。
+   */
+  voiceStore.setResult(
+    result.recognizedText || '',
+    result.replyText || '',
+    result.ttsAudioBase64,
+    false,
+  );
 
   if (result.fieldUpdates && Object.keys(result.fieldUpdates).length > 0) {
     formStore.setFieldValues(result.fieldUpdates);
   }
 
   if (result.updatedFormValues) {
-    // 同步服务端返回的完整值（含计算联动结果）
-    for (const [k, v] of Object.entries(result.updatedFormValues)) {
-      if (formStore.formValues[k] === undefined || formStore.formValues[k] === null) {
-        formStore.formValues[k] = v;
+    for (const [key, value] of Object.entries(result.updatedFormValues)) {
+      if (formStore.formValues[key] === undefined || formStore.formValues[key] === null) {
+        formStore.formValues[key] = value;
       }
     }
   }
@@ -891,26 +1004,26 @@ async function handleValidate() {
   }
 }
 
-async function handleReadback() {
-  try {
-    const res = await api.voiceForm.readbackForm(templateId.value, formStore.formValues);
-    const { text, audioBase64 } = res.data || {};
-    if (audioBase64) {
-      audioPlayer.playBase64(audioBase64);
-      voiceStore.conversationHistory.push({
-        role: 'assistant',
-        content: text,
-        timestamp: Date.now(),
-        audioBase64,
-      });
-      scrollToBottom();
-    } else if (text) {
-      ElMessage.info(text);
-    }
-  } catch {
-    console.log(111);
-  }
-}
+// async function handleReadback() {
+//   try {
+//     const res = await api.voiceForm.readbackForm(templateId.value, formStore.formValues);
+//     const { text, audioBase64 } = res.data || {};
+//     if (audioBase64) {
+//       audioPlayer.playBase64(audioBase64);
+//       voiceStore.conversationHistory.push({
+//         role: 'assistant',
+//         content: text,
+//         timestamp: Date.now(),
+//         audioBase64,
+//       });
+//       scrollToBottom();
+//     } else if (text) {
+//       ElMessage.info(text);
+//     }
+//   } catch {
+//     console.log(111);
+//   }
+// }
 
 async function handleConfirm() {
   if (formStore.missingRequiredFields.length > 0) {
@@ -954,12 +1067,85 @@ function scrollToBottom() {
 
 <style lang="scss" scoped>
 .voice-form-page {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
+  padding: 18px;
   margin: 0 auto;
-  color: #0f172a;
+  color: #2f3747;
+  background: #f8f6f3;
+
+  :deep(.el-button) {
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  :deep(.el-button--primary) {
+    color: #fff;
+    background: #ff8a26;
+    border-color: #ff8a26;
+
+    &:hover,
+    &:focus {
+      background: #f97a16;
+      border-color: #f97a16;
+    }
+
+    &:active {
+      background: #e96e0d;
+      border-color: #e96e0d;
+    }
+
+    &.is-disabled,
+    &.is-disabled:hover {
+      color: #fff;
+      background: #ffc18d;
+      border-color: #ffc18d;
+    }
+  }
+
+  :deep(.el-button--success) {
+    color: #fff;
+    background: #ff9a43;
+    border-color: #ff9a43;
+
+    &:hover,
+    &:focus {
+      background: #ff8425;
+      border-color: #ff8425;
+    }
+
+    &.is-disabled,
+    &.is-disabled:hover {
+      color: #fff;
+      background: #ffd0a8;
+      border-color: #ffd0a8;
+    }
+  }
+
+  :deep(.el-tag) {
+    border-radius: 6px;
+  }
+
+  :deep(.el-tag--warning) {
+    color: #d86400;
+    background: #fff3e6;
+    border-color: #ffd3ad;
+  }
+
+  :deep(.el-loading-mask) {
+    background: rgb(255 255 255 / 72%);
+  }
+
+  :deep(.el-loading-spinner .path) {
+    stroke: #ff8a26;
+  }
 }
 
 /* 顶部信息 */
@@ -968,20 +1154,33 @@ function scrollToBottom() {
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
-  margin-bottom: 16px;
-  background: rgb(255 255 255 / 88%);
-  border: 1px solid rgb(229 234 243 / 88%);
-  border-radius: 20px;
-  box-shadow: 0 12px 32px rgb(15 23 42 / 5%);
-  backdrop-filter: blur(14px);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  background: #fff;
+  border: 1px solid #eee7e1;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgb(72 48 28 / 4%);
 }
 
 .header-info {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
   min-width: 0;
+
+  > :deep(.el-button) {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: #ff8a26;
+    background: #fff4e9;
+    border-radius: 8px;
+
+    &:hover {
+      color: #fff;
+      background: #ff8a26;
+    }
+  }
 }
 
 .form-title {
@@ -989,44 +1188,45 @@ function scrollToBottom() {
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.25;
-  color: #0f172a;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #2f3747;
   white-space: nowrap;
 }
 
 .form-subtitle {
   display: flex;
   align-items: center;
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: #9aa2af;
 }
 
 .header-actions {
   display: flex;
   flex-shrink: 0;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  padding: 5px;
-  background: #f8fafc;
-  border: 1px solid #eef2f7;
-  border-radius: 999px;
+  padding: 4px;
+  background: #fffaf5;
+  border: 1px solid #f2e6dc;
+  border-radius: 10px;
 
   :deep(.el-button.is-circle) {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     margin-left: 0;
-    color: #64748b;
-    background: transparent;
-    border: none;
+    color: #7d8796;
+    background: #fff;
+    border: 1px solid transparent;
     transition: all 0.2s ease;
 
     &:hover:not(.is-disabled) {
-      color: #2563eb;
-      background: #fff;
-      box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
+      color: #ff8a26;
+      background: #fff4e9;
+      border-color: #ffd7b5;
+      box-shadow: 0 4px 10px rgb(255 138 38 / 12%);
       transform: translateY(-1px);
     }
 
@@ -1036,28 +1236,18 @@ function scrollToBottom() {
   }
 }
 
-/* 显示控制：默认桌面端显示，移动端按钮隐藏 */
-.mobile-only {
-  display: none !important;
-}
-
-.desktop-only {
-  display: flex !important;
-}
-
 /* 进度条 */
 .completion-bar {
   flex-shrink: 0;
-  padding: 16px 20px;
-  margin-bottom: 18px;
-  background: rgb(255 255 255 / 88%);
-  border: 1px solid rgb(229 234 243 / 88%);
-  border-radius: 18px;
-  box-shadow: 0 10px 26px rgb(15 23 42 / 4%);
-  backdrop-filter: blur(12px);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid #eee7e1;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgb(72 48 28 / 4%);
 
   :deep(.el-progress-bar__outer) {
-    background-color: #edf2f7;
+    background-color: #f4eee9;
     border-radius: 999px;
   }
 
@@ -1071,16 +1261,16 @@ function scrollToBottom() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 9px;
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: #5f6978;
 }
 
 .bar-percent {
   font-size: 15px;
-  font-weight: 800;
-  color: #6366f1;
+  font-weight: 700;
+  color: #ff8a26;
 }
 
 /* 主体布局 */
@@ -1088,7 +1278,7 @@ function scrollToBottom() {
   display: grid;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) 420px;
-  gap: 20px;
+  gap: 16px;
   min-height: 0;
 }
 
@@ -1099,26 +1289,29 @@ function scrollToBottom() {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: rgb(255 255 255 / 92%);
-  border: 1px solid rgb(229 234 243 / 88%);
-  border-radius: 22px;
-  box-shadow: 0 16px 38px rgb(15 23 42 / 6%);
-  backdrop-filter: blur(12px);
+  background: #fff;
+  border: 1px solid #eee7e1;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgb(72 48 28 / 5%);
 }
 
 .form-content {
   flex: 1;
   min-height: 0;
-  padding: 22px;
+  padding: 18px;
   overflow-y: auto;
 
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 7px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #ddd3ca;
     border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #cdbeb2;
   }
 
   &::-webkit-scrollbar-track {
@@ -1128,52 +1321,53 @@ function scrollToBottom() {
 
 .form-field {
   position: relative;
-  padding: 16px;
-  margin-bottom: 16px;
-  background: #f9fbff;
-  border: 1px solid transparent;
-  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 14px;
+  background: #fffdfb;
+  border: 1px solid #f0e9e3;
+  border-radius: 10px;
   transition:
-    background 0.22s ease,
-    border-color 0.22s ease,
-    box-shadow 0.22s ease,
-    transform 0.22s ease;
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
     background: #fff;
-    border-color: #dbeafe;
-    box-shadow: 0 10px 24px rgb(37 99 235 / 7%);
+    border-color: #ffc99b;
+    box-shadow: 0 6px 16px rgb(255 138 38 / 8%);
     transform: translateY(-1px);
   }
 
   &.field-required {
     &::before {
       position: absolute;
-      top: 16px;
-      left: 0;
+      top: 15px;
+      left: -1px;
       width: 3px;
       height: 22px;
       content: '';
-      background: #2563eb;
-      border-radius: 0 999px 999px 0;
+      background: #ff8a26;
+      border-radius: 0 3px 3px 0;
     }
   }
 
   &.field-filled {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
+    background: #fff9f2;
+    border-color: #ffd8b6;
 
     &:hover {
-      box-shadow: 0 10px 24px rgb(16 185 129 / 8%);
+      border-color: #ffb978;
+      box-shadow: 0 6px 16px rgb(255 138 38 / 10%);
     }
   }
 
   &.field-warning {
-    background: #fffbeb;
-    border-color: #fde68a;
+    background: #fffaf0;
+    border-color: #f5cf87;
 
     &:hover {
-      box-shadow: 0 10px 24px rgb(245 158 11 / 10%);
+      box-shadow: 0 6px 16px rgb(217 144 16 / 10%);
     }
   }
 
@@ -1183,26 +1377,50 @@ function scrollToBottom() {
   :deep(.el-input-number .el-input__wrapper) {
     min-height: 40px;
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 0 1px #e5eaf3 inset;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #e5e0db inset;
     transition: all 0.2s ease;
 
     &:hover {
-      box-shadow: 0 0 0 1px #bfdbfe inset;
+      box-shadow: 0 0 0 1px #ffc38f inset;
     }
 
     &.is-focus,
     &:focus-within {
       box-shadow:
-        0 0 0 1px #2563eb inset,
-        0 0 0 4px rgb(37 99 235 / 10%);
+        0 0 0 1px #ff8a26 inset,
+        0 0 0 3px rgb(255 138 38 / 10%);
     }
   }
 
+  :deep(.el-textarea__inner:focus) {
+    box-shadow:
+      0 0 0 1px #ff8a26 inset,
+      0 0 0 3px rgb(255 138 38 / 10%);
+  }
+
   :deep(.el-input-group__append) {
-    background: #f8fafc;
-    border-color: #e5eaf3;
-    border-radius: 0 12px 12px 0;
+    color: #ff8a26;
+    background: #fff6ed;
+    border-color: #e9ded4;
+    border-radius: 0 8px 8px 0;
+
+    .el-button:hover {
+      color: #f16f0c;
+    }
+  }
+
+  :deep(.el-input-number__increase),
+  :deep(.el-input-number__decrease) {
+    color: #7d8796;
+
+    &:hover {
+      color: #ff8a26;
+    }
+  }
+
+  :deep(.el-select__caret) {
+    color: #a0a8b4;
   }
 }
 
@@ -1210,10 +1428,10 @@ function scrollToBottom() {
   display: flex;
   gap: 4px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 9px;
   font-size: 14px;
-  font-weight: 700;
-  color: #334155;
+  font-weight: 650;
+  color: #3d4654;
 }
 
 .field-name {
@@ -1223,37 +1441,40 @@ function scrollToBottom() {
 }
 
 .field-required-mark {
-  color: #ef4444;
+  color: #f04438;
 }
 
 .field-unit {
   font-size: 12px;
   font-weight: 400;
-  color: #94a3b8;
+  color: #a0a8b4;
 }
 
 .field-recommend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 7px;
   align-items: center;
   margin-top: 10px;
 }
 
 .recommend-label {
   font-size: 12px;
-  color: #94a3b8;
+  color: #9aa2af;
 }
 
 .recommend-tag {
+  color: #c7650f;
   cursor: pointer;
-  border-radius: 999px;
+  background: #fff7ef;
+  border-color: #ffd5b1;
+  border-radius: 6px;
   transition: all 0.18s ease;
 
   &:hover {
-    color: #2563eb;
-    background: #eef4ff;
-    border-color: #bfdbfe;
+    color: #fff;
+    background: #ff8a26;
+    border-color: #ff8a26;
     transform: translateY(-1px);
   }
 }
@@ -1265,10 +1486,10 @@ function scrollToBottom() {
   padding: 8px 10px;
   margin-top: 10px;
   font-size: 12px;
-  color: #b45309;
-  background: rgb(245 158 11 / 10%);
-  border: 1px solid rgb(245 158 11 / 16%);
-  border-radius: 10px;
+  color: #b86b0b;
+  background: #fff7e8;
+  border: 1px solid #f7d7a5;
+  border-radius: 8px;
 }
 
 .w-full {
@@ -1284,30 +1505,58 @@ function scrollToBottom() {
 .form-actions {
   display: flex;
   flex-shrink: 0;
+  gap: 10px;
   justify-content: flex-end;
-  padding: 16px 22px;
-  background: rgb(255 255 255 / 92%);
-  border-top: 1px solid #eef2f7;
+  padding: 14px 18px;
+  background: #fffdfa;
+  border-top: 1px solid #eee7e1;
+
+  :deep(.el-button) {
+    height: 40px;
+    padding: 0 22px;
+    margin-left: 0;
+    font-weight: 650;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &:hover:not(.is-disabled) {
+      box-shadow: 0 6px 14px rgb(255 138 38 / 16%);
+      transform: translateY(-1px);
+    }
+  }
+
+  :deep(.el-button--primary) {
+    background: #ff8a26;
+    border-color: #ff8a26;
+  }
+
+  :deep(.el-button--success) {
+    background: #ff9a43;
+    border-color: #ff9a43;
+  }
 
   .btn-outline {
-    color: #2563eb !important;
+    color: #ff8a26 !important;
     background-color: #fff !important;
-    border-color: #bfdbfe !important;
+    border-color: #ffc38f !important;
 
     &:hover {
-      background-color: #eef4ff !important;
-      border-color: #2563eb !important;
-      box-shadow: 0 10px 22px rgb(37 99 235 / 10%);
+      color: #f16f0c !important;
+      background-color: #fff6ed !important;
+      border-color: #ff8a26 !important;
+      box-shadow: 0 6px 14px rgb(255 138 38 / 12%);
     }
   }
 
   .btn-solid {
-    background: linear-gradient(135deg, #2563eb, #6366f1) !important;
-    border: none !important;
-    box-shadow: 0 10px 22px rgb(37 99 235 / 20%);
+    background: #ff8a26 !important;
+    border: 1px solid #ff8a26 !important;
+    box-shadow: 0 6px 14px rgb(255 138 38 / 18%);
 
     &:hover {
-      box-shadow: 0 14px 26px rgb(37 99 235 / 25%);
+      background: #f97a16 !important;
+      border-color: #f97a16 !important;
+      box-shadow: 0 8px 18px rgb(255 138 38 / 22%);
     }
   }
 }
@@ -1319,11 +1568,10 @@ function scrollToBottom() {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: rgb(255 255 255 / 94%);
-  border: 1px solid rgb(229 234 243 / 88%);
-  border-radius: 22px;
-  box-shadow: 0 16px 38px rgb(15 23 42 / 6%);
-  backdrop-filter: blur(12px);
+  background: #fff;
+  border: 1px solid #eee7e1;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgb(72 48 28 / 5%);
 }
 
 .chat-header {
@@ -1331,55 +1579,63 @@ function scrollToBottom() {
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
-  background: linear-gradient(135deg, rgb(37 99 235 / 7%), transparent 62%), #fff;
-  border-bottom: 1px solid #eef2f7;
+  padding: 16px 18px;
+  background: #fffaf5;
+  border-bottom: 1px solid #f0e7df;
 
   h3 {
     position: relative;
     padding-left: 12px;
     margin: 0;
     font-size: 16px;
-    font-weight: 800;
-    color: #0f172a;
+    font-weight: 700;
+    color: #2f3747;
 
     &::before {
       position: absolute;
       top: 50%;
       left: 0;
       width: 4px;
-      height: 16px;
+      height: 17px;
       content: '';
-      background: linear-gradient(180deg, #2563eb, #6366f1);
-      border-radius: 999px;
+      background: #ff8a26;
+      border-radius: 3px;
       transform: translateY(-50%);
+    }
+  }
+
+  :deep(.el-button) {
+    color: #ff8a26;
+
+    &:hover {
+      background: #fff0e2;
     }
   }
 }
 
 .guide-banner {
   display: flex;
-  gap: 12px;
-  padding: 14px;
-  margin: 14px 16px 4px;
-  color: #6366f1;
-  background: linear-gradient(135deg, #eef2ff, #faf5ff);
-  border: 1px solid #e0e7ff;
-  border-radius: 16px;
+  gap: 11px;
+  padding: 13px;
+  margin: 14px 14px 4px;
+  color: #ff8a26;
+  background: #fff7ef;
+  border: 1px solid #ffd8b6;
+  border-radius: 10px;
 }
 
 .guide-title {
   margin: 0 0 4px;
   font-size: 13px;
-  font-weight: 800;
-  color: #4338ca;
+  font-weight: 700;
+  color: #c8640d;
 }
 
 .guide-text {
   margin: 0;
   font-size: 12px;
   line-height: 1.65;
-  color: #64748b;
+  color: #737d8b;
 }
 
 /* 对话区 */
@@ -1391,14 +1647,19 @@ function scrollToBottom() {
   min-height: 0;
   padding: 16px;
   overflow-y: auto;
+  background: #fff;
 
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 7px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #ddd3ca;
     border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #cdbeb2;
   }
 
   &::-webkit-scrollbar-track {
@@ -1417,14 +1678,14 @@ function scrollToBottom() {
 
     .message-avatar {
       color: #fff;
-      background: linear-gradient(135deg, #2563eb, #6366f1);
+      background: #ff8a26;
     }
 
     .message-content {
       color: #fff;
-      background: linear-gradient(135deg, #2563eb, #6366f1);
-      border-radius: 16px 16px 4px;
-      box-shadow: 0 10px 22px rgb(37 99 235 / 16%);
+      background: #ff8a26;
+      border-radius: 12px 12px 3px;
+      box-shadow: 0 6px 14px rgb(255 138 38 / 16%);
     }
 
     .message-time {
@@ -1436,15 +1697,16 @@ function scrollToBottom() {
     align-self: flex-start;
 
     .message-avatar {
-      color: #2563eb;
-      background: #eef4ff;
+      color: #e97715;
+      background: #fff1e5;
+      border: 1px solid #ffd8b6;
     }
 
     .message-content {
-      color: #334155;
-      background: #f8fafc;
-      border: 1px solid #eef2f7;
-      border-radius: 16px 16px 16px 4px;
+      color: #46505f;
+      background: #faf9f7;
+      border: 1px solid #eee7e1;
+      border-radius: 12px 12px 12px 3px;
     }
   }
 }
@@ -1457,15 +1719,25 @@ function scrollToBottom() {
   width: 34px;
   height: 34px;
   font-size: 14px;
-  border-radius: 50%;
+  border-radius: 8px;
 }
 
 .message-body {
   min-width: 0;
+
+  :deep(.el-button) {
+    padding: 4px 0;
+    margin-top: 2px;
+    color: #ff8a26;
+
+    &:hover {
+      color: #e96e0d;
+    }
+  }
 }
 
 .message-content {
-  padding: 10px 14px;
+  padding: 10px 13px;
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
@@ -1474,7 +1746,7 @@ function scrollToBottom() {
 .message-time {
   margin-top: 5px;
   font-size: 11px;
-  color: #cbd5e1;
+  color: #b2b8c1;
 }
 
 .typing {
@@ -1487,7 +1759,7 @@ function scrollToBottom() {
   display: inline-block;
   width: 6px;
   height: 6px;
-  background: #94a3b8;
+  background: #ff9a43;
   border-radius: 50%;
   animation: typing-dot 1.4s infinite;
 }
@@ -1518,8 +1790,8 @@ function scrollToBottom() {
 .voice-input-area {
   flex-shrink: 0;
   padding: 14px 16px 16px;
-  background: #fff;
-  border-top: 1px solid #eef2f7;
+  background: #fffdfa;
+  border-top: 1px solid #eee7e1;
 }
 
 .mode-switch {
@@ -1529,13 +1801,32 @@ function scrollToBottom() {
 
   :deep(.el-radio-group) {
     padding: 3px;
-    background: #f1f5f9;
-    border-radius: 999px;
+    background: #f7f1eb;
+    border: 1px solid #eee3d9;
+    border-radius: 8px;
   }
 
   :deep(.el-radio-button__inner) {
+    min-width: 64px;
+    color: #7a8492;
+    background: transparent;
     border: none;
-    border-radius: 999px !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+  }
+
+  :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+    color: #fff;
+    background: #ff8a26;
+    box-shadow: none;
+  }
+
+  :deep(.el-radio-button__inner:hover) {
+    color: #ff8a26;
+  }
+
+  :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner:hover) {
+    color: #fff;
   }
 }
 
@@ -1543,13 +1834,17 @@ function scrollToBottom() {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 9px 12px;
+  padding: 9px 11px;
   margin-bottom: 12px;
   font-size: 13px;
-  color: #64748b;
-  background: #f8fafc;
-  border: 1px solid #eef2f7;
-  border-radius: 12px;
+  color: #6f7988;
+  background: #fff7ef;
+  border: 1px solid #ffd8b6;
+  border-radius: 8px;
+
+  :deep(.el-icon) {
+    color: #ff8a26;
+  }
 }
 
 .record-controls {
@@ -1564,17 +1859,17 @@ function scrollToBottom() {
 
   :deep(.el-input__wrapper) {
     min-height: 42px;
-    border-radius: 999px;
-    box-shadow: 0 0 0 1px #e5eaf3 inset;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #e5e0db inset;
 
     &:hover {
-      box-shadow: 0 0 0 1px #bfdbfe inset;
+      box-shadow: 0 0 0 1px #ffc38f inset;
     }
 
     &.is-focus {
       box-shadow:
-        0 0 0 1px #2563eb inset,
-        0 0 0 4px rgb(37 99 235 / 10%);
+        0 0 0 1px #ff8a26 inset,
+        0 0 0 3px rgb(255 138 38 / 10%);
     }
   }
 }
@@ -1589,22 +1884,25 @@ function scrollToBottom() {
   height: 68px;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, #2563eb, #6366f1);
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 14px 26px rgb(37 99 235 / 24%);
+  background: #ff8a26;
+  border: 1px solid #ff8a26;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgb(255 138 38 / 22%);
   transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    background 0.22s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover:not(:disabled) {
-    box-shadow: 0 18px 32px rgb(37 99 235 / 30%);
-    transform: translateY(-2px) scale(1.03);
+    background: #f97a16;
+    border-color: #f97a16;
+    box-shadow: 0 10px 22px rgb(255 138 38 / 28%);
+    transform: translateY(-2px);
   }
 
   &:active:not(:disabled) {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
 
   &:disabled {
@@ -1613,12 +1911,14 @@ function scrollToBottom() {
   }
 
   &.recording {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
+    background: #ef4444;
+    border-color: #ef4444;
     animation: recording-pulse 1.5s infinite;
   }
 
   &.processing {
-    background: linear-gradient(135deg, #94a3b8, #64748b);
+    background: #a3aab4;
+    border-color: #a3aab4;
     box-shadow: none;
   }
 }
@@ -1700,13 +2000,13 @@ function scrollToBottom() {
   height: 5px;
   margin-top: 10px;
   overflow: hidden;
-  background: #eef2f7;
+  background: #f0e6dd;
   border-radius: 999px;
 }
 
 .volume-bar {
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+  background: linear-gradient(90deg, #ffb15f, #ff8a26, #ef4444);
   border-radius: 999px;
   transition: width 0.1s ease;
 }
@@ -1716,42 +2016,15 @@ function scrollToBottom() {
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 120;
-  display: none;
+  z-index: 80;
+  display: flex;
   align-items: center;
   justify-content: space-around;
-  min-height: calc(64px + env(safe-area-inset-bottom));
-  padding: 10px 24px calc(10px + env(safe-area-inset-bottom));
-  background: rgb(255 255 255 / 98%);
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 -10px 28px rgb(15 23 42 / 14%);
-  backdrop-filter: blur(14px);
-
-  :deep(.el-button) {
-    width: 40px;
-    height: 40px;
-    margin-left: 0;
-    color: #64748b;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 8px 18px rgb(15 23 42 / 6%);
-  }
-
-  :deep(.el-button.is-disabled) {
-    color: #cbd5e1 !important;
-    cursor: not-allowed;
-    background: #f8fafc !important;
-    border-color: #e5e7eb !important;
-    box-shadow: none !important;
-    opacity: 1;
-  }
-
-  :deep(.el-button--primary:not(.is-disabled)) {
-    color: #fff;
-    background: linear-gradient(135deg, #2563eb, #60a5fa);
-    border: none;
-    box-shadow: 0 10px 22px rgb(37 99 235 / 24%);
-  }
+  height: 56px;
+  padding: 0 16px;
+  background: #fff;
+  border-top: 1px solid #eee7e1;
+  box-shadow: 0 -6px 18px rgb(72 48 28 / 8%);
 }
 
 .ml-2 {
@@ -1759,10 +2032,10 @@ function scrollToBottom() {
 }
 
 /* 中等屏幕 */
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .form-body {
     grid-template-columns: minmax(0, 1fr) 380px;
-    gap: 16px;
+    gap: 14px;
   }
 
   .voice-form-page {
@@ -1775,21 +2048,18 @@ function scrollToBottom() {
 }
 
 /* 平板和移动端 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .voice-form-page {
-    --mobile-bottom-bar-height: calc(64px + env(safe-area-inset-bottom));
-    --mobile-chat-peek-height: 74px;
-
-    height: 100%;
-    padding: 12px;
-    padding-bottom: calc(168px + env(safe-area-inset-bottom));
+    height: auto;
+    min-height: 100%;
+    padding: 12px 12px 152px;
     overflow-y: auto;
   }
 
   .form-header {
     align-items: flex-start;
-    padding: 16px;
-    border-radius: 18px;
+    padding: 14px;
+    border-radius: 10px;
   }
 
   .form-title {
@@ -1804,50 +2074,45 @@ function scrollToBottom() {
   }
 
   .desktop-only {
-    display: none !important;
-  }
-
-  .mobile-only {
-    display: flex !important;
+    display: none;
   }
 
   .form-body {
     display: flex;
+    flex: none;
     flex-direction: column;
     gap: 14px;
     min-height: auto;
   }
 
   .form-panel {
-    min-height: 520px;
-    border-radius: 18px;
+    min-height: auto;
+    overflow: visible;
+    border-radius: 10px;
   }
 
   .form-content {
-    padding: 16px;
-    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+    flex: none;
+    min-height: auto;
+    padding: 14px;
+    overflow: visible;
   }
 
   .form-field {
     padding: 14px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .form-actions {
     position: fixed;
-    right: 12px;
-    bottom: calc(var(--mobile-bottom-bar-height) + var(--mobile-chat-peek-height) - 108px);
-    left: 12px;
-    z-index: 95;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 8px;
-    padding: 10px 12px;
-    background: rgb(255 255 255 / 98%);
-    border: 1px solid #e5eaf3;
-    border-radius: 18px;
-    box-shadow: 0 12px 30px rgb(15 23 42 / 12%);
-    backdrop-filter: blur(14px);
+    right: 10px;
+    bottom: 82px;
+    left: 10px;
+    z-index: 89;
+    padding: 12px 14px;
+    border: 1px solid #eee7e1;
+    border-radius: 12px;
+    box-shadow: 0 -6px 18px rgb(72 48 28 / 8%);
   }
 
   .action-buttons {
@@ -1855,32 +2120,21 @@ function scrollToBottom() {
   }
 
   .form-actions :deep(.el-button) {
-    width: 100%;
-    height: 46px;
-    padding: 0 10px;
-    margin-left: 0;
-    overflow: hidden;
-    font-size: 15px;
-    white-space: nowrap;
-  }
-
-  .form-actions :deep(.el-button > span) {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex: 1;
+    padding: 0 12px;
   }
 
   .chat-panel {
     position: fixed;
     right: 10px;
-    bottom: var(--mobile-bottom-bar-height);
+    bottom: 12px;
     left: 10px;
-    z-index: 100;
+    z-index: 90;
     width: auto;
-    height: min(68vh, calc(100vh - var(--mobile-bottom-bar-height) - 16px));
-    border-radius: 22px 22px 0 0;
-    box-shadow: 0 -12px 34px rgb(15 23 42 / 18%);
-    transform: translateY(calc(100% - var(--mobile-chat-peek-height)));
+    height: 68vh;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -10px 28px rgb(72 48 28 / 16%);
+    transform: translateY(calc(100% - 58px));
     transition: transform 0.3s ease;
   }
 
@@ -1889,7 +2143,7 @@ function scrollToBottom() {
   }
 
   .chat-header {
-    padding: 16px;
+    padding: 15px 16px;
   }
 
   .record-controls {
@@ -1903,33 +2157,14 @@ function scrollToBottom() {
 }
 
 /* 小屏幕 */
-@media (width <= 480px) {
+@media (width <=480px) {
   .voice-form-page {
-    padding: 10px;
-    padding-bottom: calc(162px + env(safe-area-inset-bottom));
+    padding: 10px 10px 152px;
   }
 
   .completion-bar {
-    padding: 14px;
-    border-radius: 16px;
-  }
-
-  .form-actions {
-    right: 10px;
-    left: 10px;
-    gap: 6px;
-    padding: 9px 10px;
-  }
-
-  .form-actions :deep(.el-button) {
-    height: 44px;
-    padding: 0 8px;
-    font-size: 14px;
-  }
-
-  .mobile-bottom-bar {
-    padding-right: 22px;
-    padding-left: 22px;
+    padding: 13px;
+    border-radius: 10px;
   }
 
   .record-controls {
@@ -1945,7 +2180,7 @@ function scrollToBottom() {
     gap: 8px;
     width: 100%;
     height: 54px;
-    border-radius: 16px;
+    border-radius: 10px;
   }
 
   .btn-inner {

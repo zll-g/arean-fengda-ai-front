@@ -1,5 +1,5 @@
 <template>
-  <div ref="boxRef" style="position: relative; flex: 1">
+  <div ref="boxRef" class="message-list-box">
     <div ref="containerRef" class="message-list" @scroll="handleScroll">
       <!-- 欢迎界面 -->
       <WelcomeScreen v-if="messages.length === 0" @select="$emit('select-suggestion', $event)" />
@@ -9,13 +9,15 @@
         <div class="messages-wrapper">
           <TransitionGroup name="message">
             <MessageBubble
-              v-for="message in messages"
+              v-for="(message, index) in messages"
               :key="message.id"
               :message="message"
               :show-timestamp="showTimestamp"
               :compact="compact"
+              :is-last-assistant="message.role === 'ASSISTANT' && index === messages.length - 1"
               @retry="$emit('retry', message.id)"
               @regenerate="$emit('regenerate', message.id)"
+              @switch-variant="$emit('switch-variant', message.id, $event)"
               @copy="handleCopy(message)"
               @like="handleLike(message)"
               @dislike="handleDislike(message)"
@@ -67,6 +69,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   retry: [messageId: string];
   regenerate: [messageId: string];
+  'switch-variant': [messageId: string, delta: number];
   'select-suggestion': [text: string];
   'preview-image': [image: Attachment, index: number];
   'play-video': [video: VideoInfo];
@@ -83,11 +86,9 @@ const newMessageCount = ref(0);
 const isAutoScrolling = ref(true);
 const lastScrollTop = ref(0);
 
-onMounted(() => {
-  if (containerRef.value && boxRef.value) {
-    containerRef.value.style.height = `${boxRef.value.clientHeight}px`;
-  }
-});
+// 高度完全交给 CSS flex 自适应（.message-list-box/.message-list: flex:1 + min-height:0），
+// 不再用 JS 固定内联高度——不同分辨率/窗口缩放/侧栏收起时都能实时自适应，
+// 避免历史上 onMounted 一次性量高后写下死 height 导致的展示区域错位。
 
 // 滚动处理
 function handleScroll() {
@@ -213,9 +214,19 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 外层盒：在 .chat-main 纵向 flex 中占满头部与输入区之外的剩余空间（随分辨率自适应） */
+.message-list-box {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .message-list {
   position: relative;
-  height: 500px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden auto;
   scrollbar-color: #e7b889 transparent;
   scrollbar-width: thin;

@@ -4,7 +4,9 @@
     <el-card shadow="never" class="panel-card">
       <template #header>
         <div class="card-header">
-          <el-icon><View /></el-icon>
+          <el-icon>
+            <View />
+          </el-icon>
           <span>{{ t('splitManagement.effectiveTitle') }}</span>
           <span v-if="savedButPending" class="pending-tag">
             {{ t('splitManagement.savedButPending') }}
@@ -17,12 +19,7 @@
           <span class="effective-label">{{ t(field.labelKey) }}</span>
           <div class="effective-value-box">
             <span class="effective-value">{{ displayValue(field.key) }}</span>
-            <el-tag
-              :type="sourceTagType(sourceOf(field.key))"
-              size="small"
-              effect="plain"
-              round
-            >
+            <el-tag :type="sourceTagType(sourceOf(field.key))" size="small" effect="plain" round>
               {{ sourceLabel(sourceOf(field.key)) }}
             </el-tag>
           </div>
@@ -35,7 +32,9 @@
     <el-card shadow="never" class="panel-card">
       <template #header>
         <div class="card-header">
-          <el-icon><MagicStick /></el-icon>
+          <el-icon>
+            <MagicStick />
+          </el-icon>
           <span>{{ t('splitManagement.trialTitle') }}</span>
         </div>
       </template>
@@ -59,6 +58,7 @@
             <el-option
               v-for="opt in strategyOptions"
               :key="opt.value"
+              style="height: 43px"
               :label="opt.label"
               :value="opt.value"
             >
@@ -117,7 +117,9 @@
           </div>
           <el-radio-group v-model="trialForm.sizeUnit" :disabled="!overrideFlags.sizeUnit">
             <el-radio-button value="char">{{ t('splitManagement.sizeUnitChar') }}</el-radio-button>
-            <el-radio-button value="token">{{ t('splitManagement.sizeUnitToken') }}</el-radio-button>
+            <el-radio-button value="token">
+              {{ t('splitManagement.sizeUnitToken') }}
+            </el-radio-button>
           </el-radio-group>
         </div>
 
@@ -126,10 +128,7 @@
           <div class="field-row">
             <div class="field-label">
               <span>{{ t('splitManagement.tableRowSplitEnabled') }}</span>
-              <el-checkbox
-                v-model="overrideFlags.tableRowSplitEnabled"
-                class="override-check"
-              >
+              <el-checkbox v-model="overrideFlags.tableRowSplitEnabled" class="override-check">
                 {{ t('splitManagement.override') }}
               </el-checkbox>
             </div>
@@ -142,10 +141,7 @@
           <div class="field-row">
             <div class="field-label">
               <span>{{ t('splitManagement.tableRowBatchSize') }}</span>
-              <el-checkbox
-                v-model="overrideFlags.tableRowBatchSize"
-                class="override-check"
-              >
+              <el-checkbox v-model="overrideFlags.tableRowBatchSize" class="override-check">
                 {{ t('splitManagement.override') }}
               </el-checkbox>
             </div>
@@ -177,7 +173,9 @@
         <el-divider content-position="left">{{ t('splitManagement.configB') }}</el-divider>
         <el-form label-position="top" size="default" class="trial-form">
           <div class="field-row">
-            <div class="field-label"><span>{{ t('splitManagement.strategy') }}</span></div>
+            <div class="field-label">
+              <span>{{ t('splitManagement.strategy') }}</span>
+            </div>
             <el-select v-model="configB.strategy" class="full-width">
               <el-option
                 v-for="opt in strategyOptions"
@@ -190,30 +188,56 @@
 
           <div class="field-pair">
             <div class="field-row">
-              <div class="field-label"><span>{{ t('splitManagement.chunkSize') }}</span></div>
-              <el-input-number v-model="configB.chunkSize" :min="50" :max="100000" :step="64" class="full-width" />
+              <div class="field-label">
+                <span>{{ t('splitManagement.chunkSize') }}</span>
+              </div>
+              <el-input-number
+                v-model="configB.chunkSize"
+                :min="50"
+                :max="100000"
+                :step="64"
+                class="full-width"
+              />
             </div>
             <div class="field-row">
-              <div class="field-label"><span>{{ t('splitManagement.chunkOverlap') }}</span></div>
-              <el-input-number v-model="configB.chunkOverlap" :min="0" :max="100000" :step="16" class="full-width" />
+              <div class="field-label">
+                <span>{{ t('splitManagement.chunkOverlap') }}</span>
+              </div>
+              <el-input-number
+                v-model="configB.chunkOverlap"
+                :min="0"
+                :max="100000"
+                :step="16"
+                class="full-width"
+              />
             </div>
           </div>
 
           <div class="field-row">
-            <div class="field-label"><span>{{ t('splitManagement.sizeUnit') }}</span></div>
+            <div class="field-label">
+              <span>{{ t('splitManagement.sizeUnit') }}</span>
+            </div>
             <el-radio-group v-model="configB.sizeUnit">
-              <el-radio-button value="char">{{ t('splitManagement.sizeUnitChar') }}</el-radio-button>
-              <el-radio-button value="token">{{ t('splitManagement.sizeUnitToken') }}</el-radio-button>
+              <el-radio-button value="char">
+                {{ t('splitManagement.sizeUnitChar') }}
+              </el-radio-button>
+              <el-radio-button value="token">
+                {{ t('splitManagement.sizeUnitToken') }}
+              </el-radio-button>
             </el-radio-group>
           </div>
 
           <div class="field-pair">
             <div class="field-row">
-              <div class="field-label"><span>{{ t('splitManagement.tableRowSplitEnabled') }}</span></div>
+              <div class="field-label">
+                <span>{{ t('splitManagement.tableRowSplitEnabled') }}</span>
+              </div>
               <el-switch v-model="configB.tableRowSplitEnabled" />
             </div>
             <div class="field-row">
-              <div class="field-label"><span>{{ t('splitManagement.tableRowBatchSize') }}</span></div>
+              <div class="field-label">
+                <span>{{ t('splitManagement.tableRowBatchSize') }}</span>
+              </div>
               <el-input-number
                 v-model="configB.tableRowBatchSize"
                 :disabled="!configB.tableRowSplitEnabled"
@@ -225,7 +249,13 @@
           </div>
         </el-form>
 
-        <el-button type="primary" plain class="compare-btn" :loading="compareLoading" @click="handleCompare">
+        <el-button
+          type="primary"
+          plain
+          class="compare-btn"
+          :loading="compareLoading"
+          @click="handleCompare"
+        >
           {{ t('splitManagement.compare') }}
         </el-button>
       </template>
@@ -305,7 +335,7 @@ const configB = reactive({
 });
 
 const strategyOptions = computed(() => {
-  const names = ['recursive', 'custom', 'paragraph', 'sentence', 'semantic', 'fixed'] as const;
+  const names = ['custom', 'recursive', 'paragraph', 'sentence', 'semantic', 'fixed'] as const;
 
   return names.map((name) => ({
     value: name,
@@ -412,11 +442,7 @@ const validateTrial = (): boolean => {
   const mergedOverlap =
     payload.chunkOverlap ?? props.effectiveConfig?.effective?.chunkOverlap ?? null;
 
-  if (
-    mergedSize !== null &&
-    mergedOverlap !== null &&
-    mergedOverlap >= mergedSize
-  ) {
+  if (mergedSize !== null && mergedOverlap !== null && mergedOverlap >= mergedSize) {
     ElMessage.error(t('splitManagement.overlapTooLarge'));
     return false;
   }
@@ -469,6 +495,14 @@ const handleResplit = async () => {
   flex-direction: column;
   gap: 14px;
   min-width: 0;
+
+  /* 工作台定高后,配置面板自身占满栏高,内容超出时内部滚动 */
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 2px;
+  overflow: hidden auto;
+  scrollbar-color: #e7b889 transparent;
+  scrollbar-width: thin;
 }
 
 .panel-card {
@@ -607,9 +641,9 @@ const handleResplit = async () => {
 
   .strategy-desc {
     overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 11px;
     color: #a18b7b;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 

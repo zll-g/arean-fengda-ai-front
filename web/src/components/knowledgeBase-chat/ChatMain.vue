@@ -18,6 +18,7 @@
       :is-typing="isTyping"
       @retry="handleRetry"
       @regenerate="handleRegenerate"
+      @switch-variant="handleSwitchVariant"
       @select-suggestion="handleSuggestion"
     />
 
@@ -48,12 +49,17 @@ import { useSettingsStore } from '@/store/modules/settings';
 import ChatHeader from './components/ChatHeader.vue';
 import MessageList from './components/MessageList.vue';
 import ChatInput from '@/components/input/ChatInput.vue';
-import { API_ENDPOINTS, type ChatRequest, chatApi } from '@/api/modules/chat';
+import {
+  API_ENDPOINTS,
+  type ChatRequest,
+  type RegenerateRequest,
+  chatApi,
+} from '@/api/modules/chat';
 import { MessageRole } from '@/types/chat';
 import { fetchEventSource as FetchEventSource } from '@microsoft/fetch-event-source';
 import { getToken, getUserInfo } from '@/utils/device';
 import { generateId } from '@/utils/helpers';
-
+import { ElMessage } from 'element-plus';
 const { t } = useI18n();
 
 defineEmits<{
@@ -273,16 +279,17 @@ function handleStop() {
 }
 
 async function streamChats(
-  request: ChatRequest,
+  request: ChatRequest | RegenerateRequest,
   conversationId: string,
   messageId: string,
   showTyping: boolean,
   ctrl: AbortController,
+  endpoint = API_ENDPOINTS.CHAT_STREAM,
 ) {
   let fullText = '';
   let reference: any = null;
-
-  await FetchEventSource(`${API_ENDPOINTS.CHAT_STREAM}`, {
+  let suggestions: any = null;
+  await FetchEventSource(`${endpoint}`, {
     openWhenHidden: true,
     method: 'POST',
     headers: {
@@ -296,6 +303,12 @@ async function streamChats(
     onmessage(event) {
       if (event.event === 'reference') {
         reference = event.data;
+        return;
+      }
+
+      if (event.event === 'suggestions') {
+        console.log(event.data);
+        suggestions = event.data;
         return;
       }
 
@@ -321,11 +334,17 @@ async function streamChats(
 
       if (event.event === 'done') {
         const referenceList = safeJsonParse<any[]>(reference, []);
-
+        const suggestionsList: any = safeJsonParse<any[]>(suggestions, []);
         chatStore.updateReferenceInConversation(
           conversationId,
           messageId,
           Array.isArray(referenceList) ? referenceList : [],
+        );
+
+        chatStore.updateSuggestionsConversation(
+          conversationId,
+          messageId,
+          Array.isArray(suggestionsList.suggestions) ? suggestionsList.suggestions : [],
         );
 
         chatStore.updateMessageInConversation(
@@ -343,7 +362,6 @@ async function streamChats(
         chatStore.finishStreaming(conversationId);
         ctrl.abort();
 
-        // 如果是新对话，完成后把 temp_xxx 换成后端真实 sessionId
         chatStore.getChat(
           chatStore.isTempConversationId(conversationId) ? 'create' : undefined,
           conversationId,
@@ -460,8 +478,105 @@ async function handleRetry(messageId: string) {
   }
 }
 
-function handleRegenerate(messageId: string) {
-  handleRetry(messageId);
+async function handleRegenerate(messageId: string) {
+  const activeConversationId = conversationId.value;
+  const sessionId = getRequestSessionId(activeConversationId);
+  if (!sessionId) return;
+
+  // 从服务端获取消息列表，取最后一条 ASSISTANT 消息的 id
+  let realMessageId = messageId;
+  let userMessageId = '';
+  try {
+    const serverMessages = await chatApi.getSessionMessages(sessionId);
+    const lastAssistant: any = [...serverMessages]
+      .reverse()
+      .find((m: any) => m.role === 'ASSISTANT');
+    if (lastAssistant?.variantCount === 5) {
+      // 提示重新生成次数不能超过五次
+      ElMessage.warning('重新生成次数已达上限（5次），无法继续生成');
+      return;
+    }
+    if (lastAssistant?.id) {
+      realMessageId = lastAssistant.id;
+    }
+    // 保存 userMessageId，用于重新生成完成后刷新版本信息
+    userMessageId = lastAssistant?.userMessageId || '';
+  } catch (e) {
+    console.error('获取消息列表失败', e);
+  }
+
+  chatStore.updateMessageInConversation(
+    activeConversationId,
+    messageId,
+    {
+      isError: false,
+      errorMessage: undefined,
+      isStreaming: true,
+      isEnd: false,
+      isBreak: false,
+      content: '',
+    },
+    true,
+  );
+
+  const ctrl = new AbortController();
+  chatStore.startStreaming(activeConversationId, messageId, ctrl);
+  chatStore.setConversationTyping(activeConversationId, false);
+
+  const params: RegenerateRequest = {
+    sessionId,
+    assistantMessageId: realMessageId,
+    knowledgeBaseIds: [knowledgeBaseId.value],
+    mode: localStorage.getItem('SELECTED_TOOL') || 'KNOWLEDGE_QA',
+    userId: getUserInfo().userId,
+  };
+
+  try {
+    await streamChats(
+      params,
+      activeConversationId,
+      messageId,
+      false,
+      ctrl,
+      API_ENDPOINTS.REGENERATE,
+    );
+  } catch (error) {
+    if ((error as Error).name !== 'AbortError') {
+      chatStore.updateMessageInConversation(
+        activeConversationId,
+        messageId,
+        {
+          isStreaming: false,
+          isEnd: true,
+          isError: true,
+          errorMessage: (error as Error).message || t('chatMain.requestFailed'),
+        },
+        true,
+      );
+    }
+  } finally {
+    chatStore.finishStreaming(activeConversationId);
+  }
+
+  // 重新生成完成后，刷新版本信息，确保版本切换器显示最新版本且不遗漏新版本
+  // 不替换消息内容（streamChats 已完成内容更新），仅更新版本元数据
+  if (userMessageId) {
+    chatStore.updateMessageInConversation(activeConversationId, messageId, { userMessageId });
+    await chatStore.loadMessageVariants(activeConversationId, messageId);
+  }
+}
+
+/** 切换回答版本（变体回溯）：delta=-1 上一版 / +1 下一版 */
+async function handleSwitchVariant(messageId: string, delta: number) {
+  const activeConversationId = conversationId.value;
+
+  if (!activeConversationId) return;
+
+  try {
+    await chatStore.switchMessageVariant(activeConversationId, messageId, delta);
+  } catch {
+    ElMessage.error('切换版本失败');
+  }
 }
 
 function handleSuggestion(text: string) {
@@ -713,7 +828,7 @@ watch(
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .input-wrapper {
     padding: 12px 14px 28px;
 

@@ -1,15 +1,22 @@
 <template>
   <div class="welcome-screen">
-    <!-- 功能卡片 -->
-    <div class="feature-cards">
-      <div v-for="feature in features" :key="feature.titleKey" class="feature-card">
-        <div class="feature-icon" :style="{ background: feature.gradient }">
-          <component :is="feature.icon" :size="22" />
-        </div>
+    <!-- 页面介绍 -->
+    <div class="welcome-header">
+      <div class="logo-wrapper">
+        <div class="logo-glow" />
 
-        <h3>{{ t(feature.titleKey) }}</h3>
-        <p>{{ t(feature.descriptionKey) }}</p>
+        <div class="logo-icon">
+          <Command :size="42" />
+        </div>
       </div>
+
+      <h1 class="title">
+        {{ t('welcomeScreen.title') }}
+      </h1>
+
+      <p class="subtitle">
+        {{ t('welcomeScreen.subtitle') }}
+      </p>
     </div>
 
     <!-- 快速开始建议 -->
@@ -34,6 +41,7 @@
     <div class="welcome-footer">
       <div class="tip">
         <Keyboard :size="14" />
+
         <span>
           {{ t('welcomeScreen.focusInputTipPrefix') }}
           <kbd>Ctrl</kbd>
@@ -42,11 +50,6 @@
           {{ t('welcomeScreen.focusInputTipSuffix') }}
         </span>
       </div>
-
-      <!-- <div class="tip">
-        <Zap :size="14" />
-        <span>支持 Markdown、代码高亮、LaTeX 公式</span>
-      </div> -->
     </div>
   </div>
 </template>
@@ -54,17 +57,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  ChevronRight,
-  Command,
-  FileText,
-  Globe,
-  Keyboard,
-  Lightbulb,
-  MessageSquare,
-  Mic,
-  PenTool,
-} from '@/components/icons';
+import { ChevronRight, Command, Globe, Keyboard, Lightbulb, PenTool } from '@/components/icons';
 
 const { t } = useI18n();
 
@@ -72,32 +65,32 @@ defineEmits<{
   select: [text: string];
 }>();
 
-const features = computed(() => [
-  {
-    icon: MessageSquare,
-    titleKey: 'welcomeScreen.features.smartChat.title',
-    descriptionKey: 'welcomeScreen.features.smartChat.description',
-    gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-  },
-  {
-    icon: Command,
-    titleKey: 'welcomeScreen.features.dataQuery.title',
-    descriptionKey: 'welcomeScreen.features.dataQuery.description',
-    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-  },
-  {
-    icon: Mic,
-    titleKey: 'welcomeScreen.features.voice.title',
-    descriptionKey: 'welcomeScreen.features.voice.description',
-    gradient: 'linear-gradient(135deg, #ec4899 0%, #d946ef 100%)',
-  },
-  {
-    icon: FileText,
-    titleKey: 'welcomeScreen.features.document.title',
-    descriptionKey: 'welcomeScreen.features.document.description',
-    gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
-  },
-]);
+// const features = computed(() => [
+//   {
+//     icon: MessageSquare,
+//     titleKey: 'welcomeScreen.features.smartChat.title',
+//     descriptionKey: 'welcomeScreen.features.smartChat.description',
+//     gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+//   },
+//   {
+//     icon: Command,
+//     titleKey: 'welcomeScreen.features.dataQuery.title',
+//     descriptionKey: 'welcomeScreen.features.dataQuery.description',
+//     gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+//   },
+//   {
+//     icon: Mic,
+//     titleKey: 'welcomeScreen.features.voice.title',
+//     descriptionKey: 'welcomeScreen.features.voice.description',
+//     gradient: 'linear-gradient(135deg, #ec4899 0%, #d946ef 100%)',
+//   },
+//   {
+//     icon: FileText,
+//     titleKey: 'welcomeScreen.features.document.title',
+//     descriptionKey: 'welcomeScreen.features.document.description',
+//     gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+//   },
+// ]);
 
 const suggestions = computed(() => [
   {
@@ -141,42 +134,45 @@ const suggestions = computed(() => [
 }
 
 .welcome-header {
-  margin-bottom: 48px;
+  margin-bottom: 38px;
   text-align: center;
 }
 
 .logo-wrapper {
   position: relative;
   display: inline-flex;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .logo-icon {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 74px;
+  height: 74px;
   color: #fff;
   background: linear-gradient(135deg, #ff9a3d 0%, #f97316 100%);
-  border-radius: 24px;
+  border-radius: 20px;
   box-shadow:
-    0 20px 40px -12px rgb(249 115 22 / 38%),
+    0 18px 36px -12px rgb(249 115 22 / 38%),
     0 0 0 6px rgb(255 138 38 / 6%);
 }
 
 .logo-glow {
   position: absolute;
-  inset: -20px;
+  inset: -24px;
   pointer-events: none;
   background: radial-gradient(circle, rgb(255 138 38 / 22%) 0%, transparent 70%);
 }
 
 .title {
   margin: 0 0 12px;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
-  color: #3f332a;
+  line-height: 1.35;
+  color: #332820;
 
   .dark & {
     color: #fff7f0;
@@ -186,7 +182,8 @@ const suggestions = computed(() => [
 .subtitle {
   margin: 0;
   font-size: 16px;
-  color: #8b7564;
+  line-height: 1.7;
+  color: #a0816b;
 
   .dark & {
     color: #a99484;

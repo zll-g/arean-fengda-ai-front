@@ -79,7 +79,7 @@
       >
         <!-- 存在三级路由时，左侧展示分类 -->
         <div v-if="hasMegaSections" class="mega-menu-sections">
-          <template v-for="section in activeMegaMenu.children || []" :key="section.path">
+          <template v-for="section in activeMegaSections" :key="section.path">
             <button
               v-if="section.children?.length"
               type="button"
@@ -195,14 +195,49 @@
             </button>
           </div>
 
-          <div class="header-user">
-            <div class="avatar">{{ getUserInfo()?.nickname?.[0] || '-' }}</div>
+          <el-dropdown
+            trigger="click"
+            popper-class="user-dropdown-popper"
+            @command="handleUserCommand"
+          >
+            <div class="header-user" tabindex="0" role="button" aria-haspopup="menu">
+              <div class="avatar">{{ getUserInfo()?.nickname?.[0] || '-' }}</div>
 
-            <div class="header-user-info">
-              <span class="username">{{ getUserInfo()?.nickname || '-' }}</span>
-              <span class="role">{{ getUserInfo()?.workno || '-' }}</span>
+              <div class="header-user-info">
+                <span class="username">{{ getUserInfo()?.nickname || '-' }}</span>
+                <span class="role">{{ getUserInfo()?.workno || '-' }}</span>
+              </div>
+
+              <span class="user-dropdown-arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-width="2" />
+                </svg>
+              </span>
             </div>
-          </div>
+
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  command="logout"
+                  class="logout-dropdown-item"
+                  :disabled="logoutLoading"
+                >
+                  <span class="logout-dropdown-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10M14.5 8l4 4-4 4M18.5 12H9"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span>{{ logoutText }}</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </header>
 
@@ -230,8 +265,11 @@ import { type RouteRecordRaw, useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { type BreadcrumbItem, useBreadcrumbStore } from '@/store/modules/breadcrumb';
 import { getUserInfo } from '@/utils/device';
-import autofit from 'autofit.js';
+import { ensureUsageAccess, usageAccess } from '@/utils/usageAccess';
+// import autofit from 'autofit.js';
 import { useI18n } from 'vue-i18n';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import api from '@/api';
 
 const { t, locale } = useI18n();
 
@@ -284,7 +322,10 @@ const titleKeyMap: Record<string, string> = {
   神经网络预测: 'routeTitle.neuralNetworkPrediction',
   '2号启动锅炉燃烧系统': 'routeTitle.boilerYstem',
   锅炉系统智能预测: 'routeTitle.intelligentPrediction',
+
+  运营统计: 'routeTitle.usageStats',
   组织信息: 'routeTitle.organizationInfo',
+  智能推荐: 'routeTitle.recommend',
 };
 
 const getI18nTitle = (title?: string) => {
@@ -303,6 +344,81 @@ const changeLang = (lang: Lang) => {
 
 const router = useRouter();
 const route = useRoute();
+
+const logoutLoading = ref(false);
+
+const logoutText = computed(() => {
+  if (logoutLoading.value) {
+    return locale.value === 'en-US' ? 'Logging out...' : '退出中...';
+  }
+
+  return locale.value === 'en-US' ? 'Log out' : '退出登录';
+});
+
+/**
+ * 调用后端退出登录接口。
+ * 如果你的接口不在 api.base.logout，请只修改这里即可，
+ * 例如：api.auth.logout()、api.user.logout()。
+ */
+
+const clearLoginState = () => {
+  // 保留语言设置，其余本地登录信息全部清除。
+  const savedLang = localStorage.getItem('lang');
+
+  localStorage.clear();
+  sessionStorage.clear();
+
+  if (savedLang) {
+    localStorage.setItem('lang', savedLang);
+  }
+};
+
+const handleLogout = async () => {
+  if (logoutLoading.value) return;
+
+  try {
+    await ElMessageBox.confirm(
+      locale.value === 'en-US' ? 'Are you sure you want to log out?' : '确定要退出当前账号吗？',
+      locale.value === 'en-US' ? 'Log out' : '退出登录',
+      {
+        confirmButtonText: locale.value === 'en-US' ? 'Confirm' : '确定',
+        cancelButtonText: locale.value === 'en-US' ? 'Cancel' : '取消',
+        type: 'warning',
+      },
+    );
+  } catch {
+    return;
+  }
+
+  logoutLoading.value = true;
+
+  try {
+    const res = await api.login.logout();
+    if (res.data !== true) {
+      await fetch('https://gms.sec.com.cn/uaa/security/sso/logout', {
+        method: 'GET',
+      }).catch(() => undefined);
+      // 使用 Image 信标方式调用 SSO 登出：
+      // - 浏览器自动携带 GMS 域 cookie，不受 CORS 限制
+      // - 返回的 HTML/JS 不会被解析执行，避免 frame-busting 劫持整个页面
+      // console.log('[logout] 开始调用 GMS SSO 登出');
+      // const img = new Image();
+      // img.src = 'https://gms.sec.com.cn/uaa/security/sso/logout';
+    }
+    clearLoginState();
+    await router.replace('/login');
+  } catch {
+    ElMessage.error(locale.value === 'en-US' ? 'Failed to log out' : '退出登录失败');
+  } finally {
+    logoutLoading.value = false;
+  }
+};
+
+const handleUserCommand = (command: string) => {
+  if (command === 'logout') {
+    void handleLogout();
+  }
+};
 
 const basePath = '/web';
 
@@ -332,6 +448,8 @@ const visibleMenuTitles = [
   '语音填单管理',
   '系统管理',
   '神经网络预测',
+  '智能推荐',
+  '运营统计',
 ];
 
 const activeMegaMenuPath = ref('');
@@ -462,6 +580,15 @@ const DefaultIcon = createSvgIcon([
   'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zm0 4.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm1.1 9.1h-2.2v-5.5h2.2v5.5z',
 ]);
 
+/** 单条路由是否应在菜单中展示（排除隐藏标记 + 必填动态参数路径） */
+const isMenuVisibleRoute = (item: RouteRecordRaw) => {
+  if (item.meta?.hideInMenu) return false;
+
+  const path = item.path || '';
+
+  return !path.split('/').some((segment) => segment.startsWith(':') && !segment.endsWith('?'));
+};
+
 const menuItems = computed<RouteRecordRaw[]>(() => {
   const webRoute = router.getRoutes().find((item) => item.path === basePath);
 
@@ -472,7 +599,12 @@ const menuItems = computed<RouteRecordRaw[]>(() => {
   return webRoute.children.filter((item) => {
     const title = item.meta?.title as string;
 
-    return visibleMenuTitles.includes(title);
+    // 超管专属页面（meta.adminOnly，如运营统计）：权限探针确认前一律不显示
+    if (item.meta?.adminOnly && usageAccess.value !== true) {
+      return false;
+    }
+
+    return visibleMenuTitles.includes(title) && isMenuVisibleRoute(item);
   }) as RouteRecordRaw[];
 });
 
@@ -506,12 +638,17 @@ const activeMegaMenu = computed<RouteRecordRaw | null>(() => {
   return menuItems.value.find((item) => item.path === activeMegaMenuPath.value) || null;
 });
 
+/** 当前菜单分组下可展示的子菜单（排除隐藏项与必填动态参数项） */
+const activeMegaSections = computed<RouteRecordRaw[]>(() => {
+  return ((activeMegaMenu.value?.children || []) as RouteRecordRaw[]).filter(isMenuVisibleRoute);
+});
+
 const hasMegaSections = computed(() => {
-  return Boolean(activeMegaMenu.value?.children?.some((item) => item.children?.length));
+  return Boolean(activeMegaSections.value.some((item) => item.children?.length));
 });
 
 const activeMegaSection = computed<RouteRecordRaw | null>(() => {
-  const children = activeMegaMenu.value?.children || [];
+  const children = activeMegaSections.value;
 
   return children.find((item) => item.path === activeMegaSectionPath.value) || children[0] || null;
 });
@@ -524,7 +661,7 @@ const megaDisplayItems = computed<RouteRecordRaw[]>(() => {
   }
 
   if (!hasMegaSections.value) {
-    return menu.children as RouteRecordRaw[];
+    return activeMegaSections.value;
   }
 
   const section = activeMegaSection.value;
@@ -534,7 +671,7 @@ const megaDisplayItems = computed<RouteRecordRaw[]>(() => {
   }
 
   if (section.children?.length) {
-    return section.children as RouteRecordRaw[];
+    return (section.children as RouteRecordRaw[]).filter(isMenuVisibleRoute);
   }
 
   return [section];
@@ -727,14 +864,18 @@ onMounted(async () => {
   breadcrumbStore.init();
   updateBreadcrumb();
 
+  // 预拉取超管权限探针（adminOnly 菜单显隐依赖此结果，先等结果再渲染避免闪现/遗漏）
+  await ensureUsageAccess();
+
   document.addEventListener('click', handleDocumentClick);
 
-  autofit.init({
-    dh: 1080,
-    dw: 1920,
-    el: '.fd-layout',
-    resize: true,
-  });
+  // autofit.init({
+  //   dh: 1080,
+  //   dw: 1920,
+  //   el: '.fd-layout',
+  //   resize: true,
+  //   limit: 0.3,
+  // });
 });
 
 onBeforeUnmount(() => {
@@ -771,7 +912,7 @@ watch(
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  width: 300px;
+  width: 270px;
   height: 100%;
   background: #fff;
   border-right: 1px solid #eee4de;
@@ -1362,7 +1503,10 @@ watch(
     gap: 10px;
     align-items: center;
     height: 44px;
-    padding: 4px 14px 4px 5px;
+    padding: 4px 10px 4px 5px;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
     background: #fff;
     border: 1px solid #eadfd8;
     border-radius: 6px;
@@ -1371,11 +1515,28 @@ watch(
       border-color 0.2s ease,
       background-color 0.2s ease;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       background: #fffaf6;
       border-color: #efc7a7;
       box-shadow: none;
       transform: none;
+    }
+  }
+
+  .user-dropdown-arrow {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 2px;
+    color: #9a9fa6;
+
+    svg {
+      width: 16px;
+      height: 16px;
     }
   }
 
@@ -1421,7 +1582,6 @@ watch(
 
   .main-container {
     flex: 1;
-    padding: 22px;
     overflow: auto;
     background: #f4f0ee;
 
@@ -1450,7 +1610,7 @@ watch(
   }
 }
 
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .mega-menu-panel {
     width: min(820px, calc(100% - 332px));
   }
@@ -1464,7 +1624,7 @@ watch(
   }
 }
 
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .content-wrapper {
     .search-box {
       width: 220px;
@@ -1476,7 +1636,7 @@ watch(
   }
 }
 
-@media (width <= 960px) {
+@media (width <=960px) {
   .sidebar {
     width: 260px;
   }
@@ -1528,5 +1688,65 @@ watch(
       border-radius: 8px;
     }
   }
+}
+</style>
+<style lang="scss">
+.user-dropdown-popper {
+  padding: 6px !important;
+  background: #fff !important;
+  border: 1px solid #eee4de !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 28px rgb(70 54 44 / 14%) !important;
+
+  .el-popper__arrow::before {
+    background: #fff !important;
+    border-color: #eee4de !important;
+  }
+
+  .el-dropdown-menu {
+    padding: 0;
+    background: transparent;
+  }
+
+  .logout-dropdown-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 140px;
+    height: 40px;
+    padding: 0 14px;
+    color: #505863;
+    border-radius: 6px;
+
+    &:hover,
+    &:focus {
+      color: #e96f0f;
+      background: #fff4e9;
+    }
+
+    &.is-disabled {
+      color: #b8bcc1;
+      cursor: not-allowed;
+      background: transparent;
+    }
+  }
+
+  .logout-dropdown-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+.el-switch.is-checked .el-switch__core {
+  background-color: #ff8a26 !important;
+  border-color: #ff8a26 !important;
 }
 </style>

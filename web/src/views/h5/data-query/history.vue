@@ -30,53 +30,47 @@
     </van-sticky>
 
     <div class="history-list">
-      <van-pull-refresh v-model="refreshing" @refresh="handleRefresh">
-        <van-empty v-if="chatStore.sessions.length === 0" description="暂无对话记录" />
+      <van-empty v-if="chatStore.sessions.length === 0" description="暂无对话记录" />
 
-        <div
-          v-for="record in chatStore.sessions"
-          :key="record.id"
-          :class="['history-card', { selected: isSelected(record.id), 'edit-mode': isEditMode }]"
-          @click="handleCardClick(record)"
-        >
-          <div
-            v-if="isEditMode"
-            class="select-checkbox"
-            @click.stop="toggleSelectRecord(record.id)"
-          >
-            <van-checkbox :model-value="isSelected(record.id)" />
-          </div>
+      <div
+        v-for="record in chatStore.sessions"
+        :key="record.id"
+        :class="['history-card', { selected: isSelected(record.id), 'edit-mode': isEditMode }]"
+        @click="handleCardClick(record)"
+      >
+        <div v-if="isEditMode" class="select-checkbox" @click.stop="toggleSelectRecord(record.id)">
+          <van-checkbox :model-value="isSelected(record.id)" />
+        </div>
 
-          <van-swipe-cell class="chat-swipe-item">
-            <div class="chat-card-inner" @click.stop="selectConversation(record)">
-              <div class="chat-avatar">
-                <div class="avatar-circle" :class="'type-' + record.type">
-                  <van-icon name="chat-o" />
-                </div>
-              </div>
-
-              <div class="chat-info">
-                <div class="info-top">
-                  <span class="chat-title">{{ record.title || '新对话' }}</span>
-                  <span class="chat-time">{{ formatTime(record.updatedTime) }}</span>
-                </div>
-
-                <div class="chat-preview">{{ record.messageCount || 0 }} 轮</div>
+        <van-swipe-cell class="chat-swipe-item">
+          <div class="chat-card-inner" @click.stop="selectConversation(record)">
+            <div class="chat-avatar">
+              <div class="avatar-circle" :class="'type-' + record.type">
+                <van-icon name="chat-o" />
               </div>
             </div>
 
-            <template #right>
-              <van-button
-                square
-                class="swipe-btn delete-btn"
-                @click.stop="handleDelete(record.sessionId)"
-              >
-                <van-icon name="delete-o" />
-              </van-button>
-            </template>
-          </van-swipe-cell>
-        </div>
-      </van-pull-refresh>
+            <div class="chat-info">
+              <div class="info-top">
+                <span class="chat-title">{{ record.title || '新对话' }}</span>
+                <span class="chat-time">{{ formatTime(record.updatedTime) }}</span>
+              </div>
+
+              <div class="chat-preview">{{ record.messageCount || 0 }} 轮</div>
+            </div>
+          </div>
+
+          <template #right>
+            <van-button
+              square
+              class="swipe-btn delete-btn"
+              @click.stop="handleDelete(record.sessionId)"
+            >
+              <van-icon name="delete-o" />
+            </van-button>
+          </template>
+        </van-swipe-cell>
+      </div>
     </div>
 
     <van-popup v-model:show="datasourcePickerVisible" round position="bottom">
@@ -104,7 +98,6 @@ const router = useRouter();
 const chatStore = useDataQueryStore();
 const dsStore = useDatasourceStore();
 
-const refreshing = ref(false);
 const datasourcePickerVisible = ref(false);
 
 const isEditMode = ref(false);
@@ -176,23 +169,6 @@ const handleDatasourceConfirm = (value: any) => {
 
   selectedRecords.value = [];
   dsStore.setCurrent(datasourceId);
-};
-
-const handleRefresh = async () => {
-  try {
-    if (!dsStore.currentId) {
-      showToast('请先选择数据源');
-      return;
-    }
-
-    await chatStore.fetchSessions(String(dsStore.currentId));
-    showToast('刷新成功');
-  } catch (error) {
-    console.error('刷新对话列表失败:', error);
-    showToast('刷新失败');
-  } finally {
-    refreshing.value = false;
-  }
 };
 
 const handleCardClick = (record: any) => {

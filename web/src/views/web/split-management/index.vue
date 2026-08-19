@@ -3,7 +3,9 @@
     <!-- ==================== 页面头 ==================== -->
     <header class="page-header">
       <el-button class="back-btn" text @click="goBack">
-        <el-icon><ArrowLeft /></el-icon>
+        <el-icon>
+          <ArrowLeft />
+        </el-icon>
         {{ t('splitManagement.back') }}
       </el-button>
 
@@ -54,7 +56,9 @@
     <el-card shadow="never" class="online-card">
       <template #header>
         <div class="card-header">
-          <el-icon><Files /></el-icon>
+          <el-icon>
+            <Files />
+          </el-icon>
           <span>{{ t('splitManagement.onlineTitle') }}</span>
 
           <!-- 全文质量统计 chips -->
@@ -72,7 +76,8 @@
               {{ t('splitManagement.disabledCount') }} {{ chunkStats.disabledCount }}
             </span>
             <span class="stat-chip">
-              {{ t('splitManagement.headingCoverage') }} {{ Math.round((chunkStats.headingCoverage || 0) * 100) }}%
+              {{ t('splitManagement.headingCoverage') }}
+              {{ Math.round((chunkStats.headingCoverage || 0) * 100) }}%
             </span>
             <span class="stat-chip scope">{{ t('splitManagement.statsOfPage') }}</span>
           </div>
@@ -120,7 +125,10 @@
                 <span class="expand-label">Text</span>
                 <span class="expand-value full-text">{{ scope.row.text }}</span>
               </div>
-              <div v-if="scope.row.metadata && Object.keys(scope.row.metadata).length" class="expand-row">
+              <div
+                v-if="scope.row.metadata && Object.keys(scope.row.metadata).length"
+                class="expand-row"
+              >
                 <span class="expand-label">{{ t('splitManagement.metadata') }}</span>
                 <div class="metadata-list">
                   <span v-for="(v, k) in scope.row.metadata" :key="k" class="metadata-item">
@@ -182,7 +190,12 @@
           </template>
         </el-table-column>
 
-        <el-table-column :label="t('knowledgeBase.table.action')" width="180" align="center" fixed="right">
+        <el-table-column
+          :label="t('knowledgeBase.table.action')"
+          width="180"
+          align="center"
+          fixed="right"
+        >
           <template #default="scope">
             <div class="row-actions">
               <el-button text type="primary" size="small" @click="openEditDialog(scope.row)">
@@ -219,7 +232,12 @@
     </el-card>
 
     <!-- ==================== 编辑分片弹窗 ==================== -->
-    <el-dialog v-model="editDialog.visible" :title="t('splitManagement.editTitle')" width="720px" destroy-on-close>
+    <el-dialog
+      v-model="editDialog.visible"
+      :title="t('splitManagement.editTitle')"
+      width="720px"
+      destroy-on-close
+    >
       <div class="dialog-tip">{{ t('splitManagement.editTip') }}</div>
       <el-input
         v-model="editDialog.text"
@@ -229,7 +247,9 @@
         show-word-limit
       />
       <template #footer>
-        <el-button @click="editDialog.visible = false">{{ t('knowledgeBase.message.cancel') }}</el-button>
+        <el-button @click="editDialog.visible = false">
+          {{ t('knowledgeBase.message.cancel') }}
+        </el-button>
         <el-button type="primary" :loading="editDialog.saving" @click="submitEditChunk">
           {{ t('knowledgeBase.message.confirm') }}
         </el-button>
@@ -237,7 +257,12 @@
     </el-dialog>
 
     <!-- ==================== 二次切分弹窗 ==================== -->
-    <el-dialog v-model="splitDialog.visible" :title="t('splitManagement.splitTitle')" width="560px" destroy-on-close>
+    <el-dialog
+      v-model="splitDialog.visible"
+      :title="t('splitManagement.splitTitle')"
+      width="560px"
+      destroy-on-close
+    >
       <el-radio-group v-model="splitDialog.mode">
         <el-radio value="target">{{ t('splitManagement.splitByTarget') }}</el-radio>
         <el-radio value="points">{{ t('splitManagement.splitByPoints') }}</el-radio>
@@ -246,18 +271,30 @@
       <div class="split-form">
         <template v-if="splitDialog.mode === 'target'">
           <div class="field-label">{{ t('splitManagement.targetSize') }}</div>
-          <el-input-number v-model="splitDialog.targetSize" :min="20" :max="60000" :step="50" style="width: 220px" />
+          <el-input-number
+            v-model="splitDialog.targetSize"
+            :min="20"
+            :max="60000"
+            :step="50"
+            style="width: 220px"
+          />
         </template>
 
         <template v-else>
           <div class="field-label">{{ t('splitManagement.splitPoints') }}</div>
-          <el-input v-model="splitDialog.pointsText" :placeholder="'200, 450'" style="width: 100%" />
+          <el-input
+            v-model="splitDialog.pointsText"
+            :placeholder="'200, 450'"
+            style="width: 100%"
+          />
           <div class="field-tip">{{ t('splitManagement.splitPointsTip') }}</div>
         </template>
       </div>
 
       <template #footer>
-        <el-button @click="splitDialog.visible = false">{{ t('knowledgeBase.message.cancel') }}</el-button>
+        <el-button @click="splitDialog.visible = false">
+          {{ t('knowledgeBase.message.cancel') }}
+        </el-button>
         <el-button type="primary" :loading="splitDialog.saving" @click="submitSplitChunk">
           {{ t('knowledgeBase.message.confirm') }}
         </el-button>
@@ -703,7 +740,13 @@ const copyChunkId = async (chunkId: string) => {
 
 // ==================== 生命周期 ====================
 onMounted(async () => {
-  if (!documentId) return;
+  // 文档ID守卫：缺失/非法(如参数字面量 ":documentId",多见于误从导航菜单直达)时
+  // 提示并回退知识库管理页,避免发出取参错误的接口请求
+  if (!documentId || documentId.startsWith(':')) {
+    ElMessage.warning(t('splitManagement.invalidDocument'));
+    router.replace({ name: 'KnowledgeBase' });
+    return;
+  }
 
   try {
     await Promise.all([fetchEffectiveConfig(), fetchChunks(1)]);
@@ -775,9 +818,9 @@ onBeforeUnmount(stopResplitPolling);
 
     .doc-name {
       overflow: hidden;
+      text-overflow: ellipsis;
       font-size: 13px;
       color: #a18b7b;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
   }
@@ -797,7 +840,11 @@ onBeforeUnmount(stopResplitPolling);
   flex-shrink: 0;
   grid-template-columns: 400px minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
+
+  /* 定高工作台:左右两栏同高且各自内部滚动,预览切块再多也不会撑破整体布局 */
+  height: clamp(460px, 52vh, 760px);
+  min-height: 0;
 }
 
 /* ==================== 线上分片 ==================== */
@@ -839,17 +886,17 @@ onBeforeUnmount(stopResplitPolling);
         padding: 2px 9px;
         font-size: 11px;
         font-weight: 500;
+        font-variant-numeric: tabular-nums;
         color: #806b5b;
         background: #fff;
         border: 1px solid #f1e1d2;
         border-radius: 999px;
-        font-variant-numeric: tabular-nums;
 
         &.warn-chip.active {
+          font-weight: 700;
           color: #c25f05;
           background: #fff7ed;
           border-color: #fed7aa;
-          font-weight: 700;
         }
 
         &.scope {
@@ -877,27 +924,27 @@ onBeforeUnmount(stopResplitPolling);
 .seg-index {
   font-size: 12px;
   font-weight: 700;
-  color: #f97316;
   font-variant-numeric: tabular-nums;
+  color: #f97316;
 }
 
 .chunk-summary {
   display: -webkit-box;
   overflow: hidden;
+  -webkit-line-clamp: 2;
   font-size: 12px;
   line-height: 1.65;
   color: #5b4738;
   word-break: break-word;
   white-space: pre-wrap;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
 .metric {
   font-size: 13px;
   font-weight: 600;
-  color: #4a382c;
   font-variant-numeric: tabular-nums;
+  color: #4a382c;
 }
 
 .metric-sub {
@@ -907,9 +954,9 @@ onBeforeUnmount(stopResplitPolling);
 
 .section-text {
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
   color: #c88752;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1037,13 +1084,20 @@ onBeforeUnmount(stopResplitPolling);
 }
 
 /* ==================== 响应式 ==================== */
-@media (width <= 1100px) {
+@media (width <=1100px) {
   .workbench {
     grid-template-columns: 1fr;
+
+    /* 单列堆叠时放开定高约束:配置面板自适应,预览面板单独限高 */
+    height: auto;
+
+    :deep(.preview-pane) {
+      height: clamp(380px, 56vh, 620px);
+    }
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .split-page {
     padding: 12px;
   }

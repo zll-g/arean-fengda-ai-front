@@ -27,6 +27,7 @@ export default {
     qaManage: 'Q&A Management',
     knowledgeBaseManage: 'Knowledge Base Management',
     splitManagement: 'Chunk Management',
+    usageStats: 'Usage Statistics',
     knowledgeBase: 'Knowledge Base',
     knowledgeBaseQa: 'Knowledge Base Q&A',
     fileManagement: 'File Management',
@@ -46,6 +47,50 @@ export default {
     boilerYstem: 'Start the combustion system of boiler No.2',
     OPCUAServicRealTimeMonitoring: 'OPC UA Service Real-Time Monitoring',
     organizationInfo: 'Organization Info',
+    recommend: 'Intelligent Recommendation',
+  },
+  homeDashboard: {
+    knowledgeTrend: 'Knowledge Base Q&A Trend',
+    last30Days: 'Last 30 Days',
+    plantVisualization: 'TCS screen of Phase II public system',
+    unitLoad: 'Unit Load',
+    dailyGeneration: 'Daily Plant Generation: ',
+    dataQueryTrend: 'Intelligent Data Query Trend',
+    recommendStatistics: 'Intelligent Recommendation Statistics',
+    noRecommendData: 'No recommendation statistics',
+
+    summary: {
+      defectTicketTitle: 'Defect Tickets Submitted',
+      totalSubmitted: 'Total Submitted',
+      knowledgeQaTitle: 'Knowledge Base Q&A',
+      todayQa: 'Today',
+      dataQueryTitle: 'Intelligent Data Queries',
+      todayQuery: 'Today',
+      documentReferenceTitle: 'Document References',
+      totalReferences: 'Total References',
+      fileTotalTitle: 'Total Files',
+      fileTotalDescription: 'Total Files',
+    },
+
+    units: {
+      unit1Load: 'Unit 1 Load',
+      unit1Chart: 'Unit 1',
+      unit2Load: 'Unit 2 Load',
+      unit2Chart: 'Unit 2',
+      unit5Load: 'Unit 5 Load',
+      unit5Chart: 'Unit 5',
+      unit6Load: 'Unit 6 Load',
+      unit6Chart: 'Unit 6',
+    },
+
+    tooltip: {
+      count: 'Count: {count}',
+      unitLoad: 'Unit Load: ',
+    },
+
+    measurementUnit: {
+      tenThousandKwh: '10,000 kWh',
+    },
   },
   chatSidebar: {
     newChat: 'New Chat',
@@ -82,11 +127,18 @@ export default {
     you: 'You',
     sendFailed: 'Message failed to send',
     retry: 'Retry',
+    prevVariant: 'Previous version',
+    nextVariant: 'Next version',
   },
   messageList: {
     aiThinking: 'AI is thinking...',
   },
   welcomeScreen: {
+    welcomeScreen: {
+      title: 'Intelligent Knowledge Assistant',
+      subtitle:
+        'Powered by your enterprise knowledge base to quickly retrieve information and answer your questions.',
+    },
     features: {
       smartChat: {
         title: 'Smart Chat',
@@ -160,6 +212,34 @@ export default {
     placeholder: 'Enter your question and press Enter to send',
     requestFailed: 'Request failed',
   },
+  recommendPage: {
+    pageTitle: 'AI Recommendation Management',
+    filter: {
+      type: 'Recommendation Type',
+      typePlaceholder: 'Select a recommendation type',
+    },
+    table: {
+      index: 'No.',
+      type: 'Recommendation Type',
+      content: 'Recommendation Content',
+      user: 'User',
+      createTime: 'Created At',
+    },
+    type: {
+      safetyMeasures: 'Safety Measures',
+      dangerPoint: 'Hazard Point',
+      defectTicket: 'Defect Ticket',
+      checkTicket: 'Ticket Verification',
+      checkTickets: 'Ticket Verification',
+      robotDog: 'Robot Dog',
+    },
+    empty: 'No recommendation data',
+    message: {
+      loadTypeFailed: 'Failed to load recommendation types:',
+      loadListFailed: 'Failed to load recommendation list:',
+    },
+  },
+
   fileManagement: {
     pageTitle: 'File List',
     searchPlaceholder: 'Search file name',
@@ -201,6 +281,9 @@ export default {
       uploading: 'Uploading files...',
       dragText: 'Drag files here to upload',
       supportedFormatsText: 'Supports {formats} files',
+      waiting: 'Waiting',
+      done: 'Done',
+      failed: 'Failed',
     },
 
     embed: {
@@ -338,6 +421,33 @@ export default {
       autoBackward: 'Auto stepping backward...',
       apiBusinessCode: 'API returned business code {code}',
     },
+
+    fault: {
+      title: 'Equipment Fault Warning',
+      desc: 'Real-time monitoring of equipment operating indicators, anomaly alerts and fault records',
+      month: 'Month',
+      metricType: 'Metric Type',
+      allMetrics: 'All Metrics',
+      refresh: 'Refresh',
+      loading: 'Loading',
+      empty: 'No fault records',
+      totalRecords: '{count} records in total',
+      table: {
+        alarmTime: 'Alarm Time',
+        metricType: 'Metric Type',
+        metricName: 'Metric Name',
+        level: 'Level',
+        currentValue: 'Current Value',
+        normalRange: 'Normal Range',
+        detail: 'Detail',
+        fault: 'Fault',
+        warning: 'Warning',
+      },
+      pagination: {
+        prev: 'Previous',
+        next: 'Next',
+      },
+    },
   },
   boilerDashboard: {
     title: 'No.2 Startup Boiler DCS Screen',
@@ -391,6 +501,7 @@ export default {
       versionUsed: 'Version used',
       versionNumber: 'Version Number',
       versionUpdate: 'Version Update',
+      preview: 'Preview',
       rebuildIndex: 'Rebuild index',
       underReconstruction: 'Under Reconstruction',
       action: 'Action',
@@ -400,6 +511,7 @@ export default {
 
     splitStrategy: {
       recursive: 'Recursive Split',
+      custom: 'Custom Split',
       paragraph: 'Paragraph Split',
       sentence: 'Sentence Split',
       semantic: 'Semantic Split',
@@ -454,6 +566,10 @@ export default {
       create: 'Create Knowledge Base',
 
       splitOptions: {
+        custom: {
+          label: 'Custom Split Strategy (Recommended)',
+          desc: 'Binds headings to their body text and carries hierarchical path context; best retrieval accuracy for power-plant official documents.',
+        },
         recursive: {
           label: 'Recursive Split Strategy (Recommended)',
           desc: 'Automatically recognizes paragraph structure and keeps semantic integrity. Block size is about 500-1500 characters.',
@@ -497,10 +613,90 @@ export default {
       },
     },
   },
+  usageStats: {
+    title: 'Usage Statistics',
+    refresh: 'Refresh',
+    last7Days: 'Last 7 days',
+    last30Days: 'Last 30 days',
+    startDate: 'Start date',
+    endDate: 'End date',
+    card: {
+      todayEvents: 'Events Today',
+      rangeTotal: 'Range total:',
+      todayActiveUsers: 'Active Users Today',
+      chatRequests: 'Chat Requests (Range)',
+      chatRequestsSub: 'QA + data query + doc analysis',
+      successRate: 'Chat Success Rate',
+      avgLatency: 'Avg Response Latency',
+      chatOnly: 'Chat events only',
+      totalTokens: 'Total Tokens',
+      tokenSub: 'Data query not aggregated, actual higher',
+      docUploads: 'Doc Uploads',
+      docUploadsSub: 'Incl. batch & file-embedding',
+      kbCreates: 'KBs Created',
+      kbCreatesSub: '',
+    },
+    trendTitle: 'Usage Trend',
+    eventsLine: 'Events',
+    usersLine: 'Active Users',
+    featureDistTitle: 'Feature Distribution',
+    statusDistTitle: 'Chat Status Distribution',
+    userRankTitle: 'Top 10 Active Users',
+    rankCol: '#',
+    userCol: 'User',
+    worknoCol: 'Work No',
+    eventsCol: 'Events',
+    chatRequestsCol: 'Chats',
+    tokensCol: 'Tokens',
+    lastActiveCol: 'Last Active',
+    detailTitle: 'Usage Events',
+    eventTypeFilter: 'Event type',
+    featureFilter: 'Feature',
+    statusFilter: 'Status',
+    userKwPlaceholder: 'Account / Work no / User ID',
+    search: 'Search',
+    timeCol: 'Time',
+    typeCol: 'Type',
+    featureCol: 'Feature',
+    statusCol: 'Status',
+    latencyCol: 'Latency',
+    questionCol: 'Question',
+    detailCol: 'Detail',
+    noData: 'No data',
+    anonymous: 'Anonymous',
+    statusSuccess: 'Success',
+    statusError: 'Failed',
+    statusInterrupted: 'Interrupted',
+    noPermission: 'No permission for usage statistics',
+    type: {
+      kbAsk: 'KB Q&A',
+      kbRegenerate: 'QA Regenerate',
+      diAsk: 'Data Query',
+      diRegenerate: 'Query Regenerate',
+      docAnalysis: 'Doc Analysis',
+      docUpload: 'Doc Upload',
+      kbCreate: 'KB Create',
+      unknown: 'Unknown',
+    },
+    feature: {
+      knowledgeQa: 'KB Q&A',
+      deepSearch: 'Deep Search',
+      docAnalysis: 'Doc Analysis',
+      webSearch: 'Web Search',
+      deepResearch: 'Deep Research',
+      openApi: 'Open API',
+      nl2sql: 'Data Query',
+      document: 'Document',
+      knowledgeBase: 'Knowledge Base',
+      unknown: 'Other',
+    },
+  },
   splitManagement: {
     pageTitle: 'Chunk Management',
     back: 'Back to Knowledge Base',
     document: 'Document',
+    invalidDocument:
+      'Invalid document entry — please open Chunk Management from the knowledge base document list',
     docStatus: 'Status',
     segmentUnit: 'chunks',
     // effective config
@@ -518,7 +714,8 @@ export default {
     tableRowBatchSize: 'Table Rows per Batch',
     // trial / preview
     trialTitle: 'Preview (not persisted)',
-    trialTip: 'Adjust parameters and click Preview to see chunking results instantly; what you preview is what gets ingested',
+    trialTip:
+      'Adjust parameters and click Preview to see chunking results instantly; what you preview is what gets ingested',
     followEffective: 'Follow effective config',
     compareMode: 'A/B Compare',
     configA: 'Config A',
@@ -564,7 +761,8 @@ export default {
     onlineTitle: 'Online Chunks',
     selectedCount: '{n} selected',
     mergeSelected: 'Merge Selected',
-    mergeOrderTip: '{n} chunks will be merged in segment order; the first keeps its id, others are removed',
+    mergeOrderTip:
+      '{n} chunks will be merged in segment order; the first keeps its id, others are removed',
     mergeConfirm: 'Confirm Merge',
     mergeSuccess: 'Chunks merged',
     mergeLimit: 'Please select 2 to 10 chunks to merge',
@@ -574,7 +772,8 @@ export default {
       'After disabling, this chunk will no longer be hit by any retrieval path; the vector is kept and can be restored anytime. Disable it?',
     editAction: 'Edit',
     editTitle: 'Edit Chunk Text',
-    editTip: 'After saving, the chunk is re-vectorized as "context prefix + new text" (same as ingest)',
+    editTip:
+      'After saving, the chunk is re-vectorized as "context prefix + new text" (same as ingest)',
     editEmpty: 'Chunk text cannot be empty',
     splitAction: 'Re-split',
     splitTitle: 'Split Chunk Further',
@@ -621,6 +820,17 @@ export default {
       fixed: 'Split by fixed character count; suitable for unstructured text or code snippets',
     },
   },
+  splitConfigForm: {
+    enable: 'Custom split configuration',
+    followDefaultTip:
+      'When not configured, uploaded documents follow the knowledge-base / global default strategy',
+    scopeTip:
+      'Applies only to documents in this upload, effective before splitting and embedding; you can still preview and re-split in Split Management afterwards',
+    overlapRule: 'Overlap must be smaller than chunk size',
+    configButton: 'Split Config',
+    configuredTag: 'Custom split',
+    clear: 'Clear',
+  },
   dataQueryChat: {
     newChat: 'New Chat',
     newConversation: 'New Conversation',
@@ -663,8 +873,8 @@ export default {
     },
 
     placeholder: {
-      multi: 'Enter a cross-source query, e.g. compare online and offline sales last month',
-      single: 'Enter your question, e.g. what were the sales by region last month?',
+      multi: 'Enter a cross-source query, e.g. What are the hot components? ',
+      single: 'Enter your question, e.g. Daily power generation of the entire plant',
     },
 
     hint: {
@@ -680,24 +890,21 @@ export default {
       selectDatasourceFirst: 'Please select a datasource first',
       loadGroupFailed: 'Failed to load group details',
       canceled: 'Query canceled',
-      stopped: 'Generation stopped. Partial answer has been saved',
-      regenerateUnavailable: 'Regenerate is not available for this message',
-      switchVariantFailed: 'Failed to switch answer version, please try again',
       feedbackThanks: 'Thanks for your feedback. We will keep improving',
     },
 
     sampleQuestions: {
       single: [
-        'What was the total sales amount last month?',
-        'Rank order counts by region',
-        'Show the daily new user trend for the past 7 days',
-        'Top 10 products by sales',
+        'Unit 6 EMCC power supply 1 (supplied by the host factory) circuit breaker electrical degree in the past hour',
+        'Current load of Unit 5',
+        'Current load of Unit 6',
+        'Daily power generation of the entire plant',
       ],
       multi: [
-        'Compare total sales across datasources last month',
-        'Summarize order volume across all datasources',
-        'Compare average order value between online and offline channels',
-        'Compare sales trends by channel over the past 30 days',
+        'What are the types of electronic fence alarms triggered recently? ',
+        'How many people are using facial recognition for safety inspections today? ',
+        'What are the hot components? ',
+        'What is the current time? ',
       ],
     },
   },
@@ -942,7 +1149,7 @@ export default {
   masterData: {
     source: {
       product: 'FengDa Master Data',
-      supplier: 'Crew Master Data',
+      user: 'User Master Data',
       gms: 'Gms Master Data',
     },
 
@@ -1189,7 +1396,7 @@ export default {
       voiceAliasTip: 'Different expressions users may use in voice input',
 
       productMasterData: 'Product Master Data',
-      supplierMasterData: 'Supplier Master Data',
+      userMasterData: 'User Master Data',
     },
 
     fieldType: {

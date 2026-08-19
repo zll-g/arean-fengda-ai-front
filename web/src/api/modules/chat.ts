@@ -1,23 +1,27 @@
+import { aiPrefix, filePrefix } from '../http';
+
 // API 端点定义（固定）
 const API_ENDPOINTS = {
   // 发送消息（流式）
-  CHAT_STREAM: '/api/chat/rag/stream',
+  CHAT_STREAM: `${aiPrefix}/chat/rag/stream`,
   // 发送消息（非流式）
-  CHAT: '/api/chat-ui/chat',
+  CHAT: `${aiPrefix}/chat-ui/chat`,
   // 获取对话历史
-  CONVERSATIONS: '/api/chat/sessions',
+  CONVERSATIONS: `${aiPrefix}/chat/sessions`,
   // 获取单个对话
-  CONVERSATION: '/api/chat/sessions/{sessionId}/messages',
+  CONVERSATION: `${aiPrefix}/chat/sessions/{sessionId}/messages`,
   // 删除对话
-  DELETE_CONVERSATION: '/api/chat/sessions/{sessionId}',
+  DELETE_CONVERSATION: `${aiPrefix}/chat/sessions/{sessionId}`,
   // 上传文件
-  UPLOAD: '/api/chat-ui/upload',
+  UPLOAD: `${filePrefix}/chat-ui/upload`,
   // 获取模型列表
-  MODELS: '/api/chat-ui/models',
+  MODELS: `${aiPrefix}/chat-ui/models`,
   // 停止生成
-  STOP: '/api/chat/rag/stop',
+  STOP: `${aiPrefix}/chat/rag/stop`,
+  // 重新生成
+  REGENERATE: `${aiPrefix}/chat/rag/regenerate`,
 };
-
+import { getToken } from '@/utils/device';
 // 请求类型定义
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -49,6 +53,37 @@ export interface ChatRequest {
   deepSearch?: boolean;
   webSearch?: boolean;
   deepThinking?: boolean;
+}
+
+export interface RegenerateRequest {
+  sessionId: string;
+  userId?: string;
+  assistantMessageId?: string;
+  knowledgeBaseIds?: string[];
+  mode?: string;
+  maxOutputTokens?: number;
+  customPrompt?: string;
+}
+
+export interface SessionMessage {
+  id: string;
+  sessionId: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  imageList: string[];
+  fileList: string[];
+  reference: string | null;
+  inputTokenCount: number | null;
+  outputTokenCount: number | null;
+  latency: number | null;
+  rating: string | null;
+  status: string;
+  stopReason: string | null;
+  userMessageId: string | null;
+  variantIndex: number | null;
+  variantCount: number | null;
+  activeVariant: boolean;
+  createdAt: string;
 }
 
 export interface ChatResponse {
@@ -96,6 +131,7 @@ class ChatApi {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify(request),
       signal,
@@ -134,6 +170,7 @@ class ChatApi {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify(request),
     });
@@ -154,8 +191,73 @@ class ChatApi {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
       },
     });
+  }
+
+  /**
+   * 重新生成（流式）
+   * @param request 重新生成请求参数
+   * @param signal 可选的 AbortSignal 用于取消请求
+   * @description assistantMessageId 为空时对最后一个问题重新生成
+   */
+  async *regenerateChat(request: RegenerateRequest, signal?: AbortSignal): AsyncGenerator<string> {
+    const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.REGENERATE}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify(request),
+      signal,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const text = decoder.decode(value, { stream: true });
+      const match = text.match(/data:\s*(\{.*\})/);
+      if (match) {
+        yield JSON.parse(match[1])['message'];
+      }
+    }
+  }
+
+  /**
+   * 获取会话消息列表
+   * @param sessionId 会话ID
+   */
+  async getSessionMessages(sessionId: string): Promise<SessionMessage[]> {
+    const url = `${this.baseUrl}${API_ENDPOINTS.CONVERSATION.replace('{sessionId}', sessionId)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP ${response.status}`);
+    }
+
+    const res = await response.json();
+    return res.data || [];
   }
 
   /**

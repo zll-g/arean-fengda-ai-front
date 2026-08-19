@@ -52,9 +52,12 @@
       <button class="action-btn" title="重命名" @click="handleRename">
         <Edit3 :size="14" />
       </button>
-      <button class="action-btn delete" title="删除" @click="handleDelete">
-        <Trash2 :size="14" />
-      </button>
+
+      <el-popconfirm :title="t('dataQueryChat.deleteConversation')" @confirm="handleDelete">
+        <template #reference>
+          <Trash2 :size="14" @click.stop />
+        </template>
+      </el-popconfirm>
     </div>
   </div>
 </template>
@@ -64,7 +67,7 @@ import { computed, nextTick, ref } from 'vue';
 import { Clock, Edit3, MessageSquare, Pin, Trash2 } from '@/components/icons';
 import { formatTimestamp } from '@/utils/helpers';
 import type { Conversation } from '@/types/chat';
-
+import { useI18n } from 'vue-i18n';
 const props = defineProps<{
   conversation: Conversation;
   isActive: boolean;
@@ -80,7 +83,7 @@ const emit = defineEmits<{
 const isEditing = ref(false);
 const editTitle = ref('');
 const inputRef = ref<HTMLInputElement | null>(null);
-
+const { t } = useI18n();
 const formattedTime = computed(() => {
   return formatTimestamp(props.conversation.lastMessageAt);
 });
@@ -117,9 +120,7 @@ function handleCancelRename() {
 }
 
 function handleDelete() {
-  if (confirm('确定要删除这个对话吗？')) {
-    emit('delete', props.conversation.id);
-  }
+  emit('delete', props.conversation.id);
 }
 </script>
 

@@ -47,20 +47,25 @@ export const useVoiceStore = defineStore('voice', () => {
     processingMessage.value = message;
   }
 
-  function setResult(text: string, reply: string, audio?: string) {
+  function setResult(text: string, reply: string, audio?: string, addUserMessage = true) {
     recognizedText.value = text;
     replyText.value = reply;
-    if (audio) ttsAudioBase64.value = audio;
+
+    if (audio) {
+      ttsAudioBase64.value = audio;
+    }
+
     state.value = audio ? 'speaking' : 'idle';
 
-    // 添加对话历史
-    if (text) {
+    // 是否添加用户消息，避免提前显示后重复添加
+    if (text && addUserMessage) {
       conversationHistory.value.push({
         role: 'user',
         content: text,
         timestamp: Date.now(),
       });
     }
+
     if (reply) {
       conversationHistory.value.push({
         role: 'assistant',
@@ -70,7 +75,6 @@ export const useVoiceStore = defineStore('voice', () => {
       });
     }
   }
-
   function setIdle() {
     state.value = 'idle';
   }

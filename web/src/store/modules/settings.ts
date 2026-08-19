@@ -73,7 +73,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // 状态
   const settings = ref<AppSettings>({ ...defaultSettings });
   const sidebarCollapsed = ref(false);
-  const sidebarWidth = ref(280);
+  const sidebarWidth = ref(260);
   const showShortcutsModal = ref(false);
   const showSearchModal = ref(false);
   const showSettingsModal = ref(false);

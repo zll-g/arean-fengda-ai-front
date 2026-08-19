@@ -79,6 +79,21 @@ export interface Message {
   messageId?: string;
   imageList?: any;
   fileList?: any;
+  suggestions?: any;
+
+  // ==================== 回答版本（变体）扩展字段 ====================
+  /** 该回答对应的用户消息ID（仅 ASSISTANT，后端变体组定位键） */
+  userMessageId?: string;
+  /** 当前生效变体序号（1=首发，重新生成递增） */
+  variantIndex?: number;
+  /** 同一问题的回答变体总数（后端历史接口下发；>1 即可渲染版本切换器） */
+  variantCount?: number;
+  /** 同组全部变体详情（点击切换时懒加载并缓存） */
+  variants?: any[];
+  /** 版本切换中标记（禁用按钮防抖） */
+  variantSwitching?: boolean;
+  /** 变体列表是否已加载（懒加载标记） */
+  variantsLoaded?: boolean;
 }
 
 // 对话设置

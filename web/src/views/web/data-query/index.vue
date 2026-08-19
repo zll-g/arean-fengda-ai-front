@@ -81,7 +81,9 @@
             <el-option v-for="ds in dsStore.list" :key="ds.id" :label="ds.name" :value="ds.id">
               <div class="ds-option">
                 <span class="ds-status-dot" :class="{ online: ds.lastTestResult === 1 }" />
-                <el-icon class="ds-option-icon"><Coin /></el-icon>
+                <el-icon class="ds-option-icon">
+                  <Coin />
+                </el-icon>
                 <span class="ds-option-name">{{ ds.name }}</span>
               </div>
             </el-option>
@@ -117,7 +119,9 @@
               <el-option v-for="ds in dsStore.list" :key="ds.id" :label="ds.name" :value="ds.id">
                 <div class="ds-option">
                   <span class="ds-status-dot" :class="{ online: ds.lastTestResult === 1 }" />
-                  <el-icon class="ds-option-icon"><Coin /></el-icon>
+                  <el-icon class="ds-option-icon">
+                    <Coin />
+                  </el-icon>
                   <span class="ds-option-name">{{ ds.name }}</span>
                 </div>
               </el-option>
@@ -131,7 +135,9 @@
         <!-- 欢迎语 -->
         <div v-if="chatStore.messages.length === 0" class="welcome">
           <div class="welcome-icon">
-            <el-icon :size="48"><Cpu /></el-icon>
+            <el-icon :size="48">
+              <Cpu />
+            </el-icon>
           </div>
 
           <h2>{{ t('dataQueryChat.welcomeTitle') }}</h2>
@@ -158,7 +164,9 @@
               class="tip-card"
               @click="handleSendMessage(tip)"
             >
-              <el-icon><Search /></el-icon>
+              <el-icon>
+                <Search />
+              </el-icon>
               <span>{{ tip }}</span>
             </div>
           </div>
@@ -178,8 +186,6 @@
             @switch-variant="handleSwitchVariant(msg, $event)"
           />
         </div>
-
-        <div ref="scrollAnchorRef" />
       </el-scrollbar>
 
       <!-- ==================== 输入区域 ==================== -->
@@ -232,7 +238,9 @@
             :title="micButtonTitle"
             @click="toggleVoiceInput"
           >
-            <el-icon><Microphone /></el-icon>
+            <el-icon>
+              <Microphone />
+            </el-icon>
           </el-button>
 
           <el-button
@@ -249,7 +257,9 @@
 
         <div class="input-hints">
           <span v-if="!canSend" class="hint-warning">
-            <el-icon><Warning /></el-icon>
+            <el-icon>
+              <Warning />
+            </el-icon>
             {{ t('dataQueryChat.hint.selectDatasource') }}
           </span>
 
@@ -294,7 +304,7 @@ const chatStore = useDataQueryStore();
 const dsStore = useDatasourceStore();
 
 const inputText = ref('');
-const scrollAnchorRef = ref(null as any);
+const messageScrollRef = ref<any>(null);
 
 // 语音录音状态：使用 AudioContext 采集 PCM，再编码成 audio/wav
 const isRecording = ref(false);
@@ -316,6 +326,14 @@ const canSend = computed(() => {
   }
 
   return !!dsStore.currentId;
+});
+
+const currentDatasource: any = computed(() => {
+  return (
+    dsStore.list.find((item: any) => String(item.id) === String(dsStore.currentId)) ||
+    dsStore.current ||
+    null
+  );
 });
 
 // 输入框占位文本
@@ -361,9 +379,9 @@ const federatedSampleQuestions = computed(() => {
 });
 
 const currentSampleQuestions = computed(() => {
-  return chatStore.queryMode === 'multi' && chatStore.selectedDsIds.length > 1
-    ? federatedSampleQuestions.value
-    : singleSampleQuestions.value;
+  return currentDatasource.value?.dbType === 'tdengine'
+    ? singleSampleQuestions.value
+    : federatedSampleQuestions.value;
 });
 
 // 监听语言切换，处理 dayjs 相对时间
@@ -415,7 +433,19 @@ watch(
 );
 
 function scrollToBottom() {
-  nextTick(() => scrollAnchorRef.value?.scrollIntoView({ behavior: 'smooth' }));
+  nextTick(() => {
+    const scrollbar = messageScrollRef.value;
+    const wrap = scrollbar?.wrapRef;
+
+    if (!scrollbar || !wrap) return;
+
+    // 重新计算 Element Plus 滚动条尺寸
+    scrollbar.update();
+
+    requestAnimationFrame(() => {
+      scrollbar.setScrollTop(wrap.scrollHeight);
+    });
+  });
 }
 
 async function handleSelectSession(sessionId: string) {
@@ -764,6 +794,7 @@ async function handleSendMessage(question: any) {
 }
 
 function onDatasourceChange(id: string) {
+  console.log(id, 333);
   dsStore.setCurrent(id);
 }
 
@@ -794,15 +825,12 @@ async function handleGroupChange(groupId: string) {
 
 function handleCancel() {
   chatStore.cancelStreaming();
-  ElMessage.info(t('dataQueryChat.message.stopped'));
+  ElMessage.info(t('dataQueryChat.message.canceled'));
 }
 
 // 重新回答：就地在原气泡内生成新回答变体（旧版本保留可切换）
 async function handleRegenerate(msg: any) {
-  const started = await chatStore.regenerateMessage(msg);
-  if (!started) {
-    ElMessage.warning(t('dataQueryChat.message.regenerateUnavailable'));
-  }
+  await chatStore.regenerateMessage(msg);
 }
 
 // 切换回答版本（变体回溯）
@@ -856,7 +884,7 @@ onMounted(() => {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  width: 280px;
+  width: 260px;
   background: #fffaf5;
   border-right: 1px solid #f0e7de;
 }
@@ -1529,105 +1557,5 @@ onMounted(() => {
 
 :deep(.el-empty__image) {
   opacity: 0.82;
-}
-
-// ==================== 响应式 ====================
-@media (width <= 1100px) {
-  .chat-topbar {
-    align-items: flex-start;
-    height: auto;
-    min-height: 68px;
-  }
-
-  .datasource-selector {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .selector-divider {
-    display: none;
-  }
-
-  .multi-ds-select {
-    width: 230px;
-  }
-}
-
-@media (width <= 900px) {
-  .session-panel {
-    width: 240px;
-  }
-
-  .welcome {
-    padding-top: 70px;
-  }
-
-  .welcome-tips {
-    grid-template-columns: 1fr;
-  }
-
-  .chat-topbar {
-    padding: 12px 16px 8px;
-  }
-
-  .datasource-selector {
-    width: 100%;
-  }
-
-  .topbar-spacer {
-    display: none;
-  }
-
-  .single-ds-select,
-  .group-select,
-  .multi-ds-select {
-    flex: 1;
-    min-width: 180px;
-  }
-}
-
-@media (width <= 720px) {
-  .chat-view {
-    border-radius: 0;
-  }
-
-  .session-panel {
-    display: none;
-  }
-
-  .chat-topbar {
-    padding: 10px 14px 8px;
-  }
-
-  .datasource-selector {
-    justify-content: stretch;
-  }
-
-  .mode-switch {
-    width: 100%;
-
-    :deep(.el-radio-button) {
-      flex: 1;
-    }
-
-    :deep(.el-radio-button__inner) {
-      width: 100%;
-    }
-  }
-
-  .single-ds-select,
-  .group-select,
-  .multi-ds-select {
-    width: 100%;
-    min-width: 100%;
-  }
-
-  .message-area {
-    padding: 0 14px;
-  }
-
-  .input-area {
-    padding: 0 14px 14px;
-  }
 }
 </style>

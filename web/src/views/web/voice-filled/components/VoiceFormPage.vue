@@ -4,7 +4,9 @@
     <div class="form-header">
       <div class="header-info">
         <el-button text @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>
         </el-button>
         <div>
           <h2 class="form-title">
@@ -21,22 +23,30 @@
       <div class="header-actions desktop-only">
         <el-tooltip content="撤销 (Ctrl+Z)">
           <el-button :disabled="!canUndo" circle @click="handleUndo">
-            <el-icon><RefreshLeft /></el-icon>
+            <el-icon>
+              <RefreshLeft />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="重做 (Ctrl+Y)">
           <el-button :disabled="!canRedo" circle @click="handleRedo">
-            <el-icon><RefreshRight /></el-icon>
+            <el-icon>
+              <RefreshRight />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="智能校验">
           <el-button circle @click="handleValidate">
-            <el-icon><CircleCheck /></el-icon>
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="语音回读">
           <el-button circle @click="handleReadback">
-            <el-icon><VideoPlay /></el-icon>
+            <el-icon>
+              <VideoPlay />
+            </el-icon>
           </el-button>
         </el-tooltip>
       </div>
@@ -85,7 +95,9 @@
               >
                 <template v-if="field.masterDataCode" #append>
                   <el-button @click="openMasterDataPicker(field)">
-                    <el-icon><Search /></el-icon>
+                    <el-icon>
+                      <Search />
+                    </el-icon>
                   </el-button>
                 </template>
               </el-input>
@@ -164,7 +176,9 @@
 
               <!-- 校验警告 -->
               <div v-if="getFieldWarning(field.fieldCode)" class="field-warning-msg">
-                <el-icon><WarningFilled /></el-icon>
+                <el-icon>
+                  <WarningFilled />
+                </el-icon>
                 {{ getFieldWarning(field.fieldCode) }}
               </div>
             </div>
@@ -180,7 +194,10 @@
             :disabled="formStore.completionRate < 100"
             @click="handleConfirm"
           >
-            <el-icon><CircleCheck /></el-icon> 确认表单
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
+            确认表单
           </el-button>
           <el-button
             type="success"
@@ -189,7 +206,10 @@
             :disabled="formStore.formData?.status !== 'confirmed'"
             @click="handleSubmit"
           >
-            <el-icon><Upload /></el-icon> 提交
+            <el-icon>
+              <Upload />
+            </el-icon>
+            提交
           </el-button>
         </div>
       </div>
@@ -199,7 +219,9 @@
         <div class="chat-header">
           <h3>语音助手</h3>
           <el-button v-if="isMobile" text @click="showChat = !showChat">
-            <el-icon><component :is="showChat ? 'ArrowDown' : 'ArrowUp'" /></el-icon>
+            <el-icon>
+              <component :is="showChat ? 'ArrowDown' : 'ArrowUp'" />
+            </el-icon>
           </el-button>
         </div>
 
@@ -208,7 +230,9 @@
           v-if="voiceStore.conversationHistory.length === 0 && formStore.template?.sampleSpeech"
           class="guide-banner"
         >
-          <el-icon :size="20"><InfoFilled /></el-icon>
+          <el-icon :size="20">
+            <InfoFilled />
+          </el-icon>
           <div>
             <p class="guide-title">语音引导</p>
             <p class="guide-text">{{ formStore.template.sampleSpeech }}</p>
@@ -224,8 +248,12 @@
             :class="msg.role"
           >
             <div class="message-avatar">
-              <el-icon v-if="msg.role === 'user'"><User /></el-icon>
-              <el-icon v-else><Cpu /></el-icon>
+              <el-icon v-if="msg.role === 'user'">
+                <User />
+              </el-icon>
+              <el-icon v-else>
+                <Cpu />
+              </el-icon>
             </div>
             <div class="message-body">
               <div class="message-content">{{ msg.content }}</div>
@@ -236,7 +264,10 @@
                 size="small"
                 @click="audioPlayer.playBase64(msg.audioBase64!)"
               >
-                <el-icon><VideoPlay /></el-icon> 播放
+                <el-icon>
+                  <VideoPlay />
+                </el-icon>
+                播放
               </el-button>
             </div>
           </div>
@@ -244,7 +275,9 @@
           <!-- 处理中 -->
           <div v-if="voiceStore.state === 'processing'" class="message-item assistant">
             <div class="message-avatar">
-              <el-icon><Cpu /></el-icon>
+              <el-icon>
+                <Cpu />
+              </el-icon>
             </div>
             <div class="message-body">
               <div class="message-content typing">
@@ -268,7 +301,9 @@
             v-if="voiceStore.partialText || voiceStore.state === 'listening'"
             class="recognized-preview"
           >
-            <el-icon><Microphone /></el-icon>
+            <el-icon>
+              <Microphone />
+            </el-icon>
             <span>{{ voiceStore.partialText || '正在听...' }}</span>
           </div>
 
@@ -294,7 +329,9 @@
               @touchend.prevent="handleRecordStop"
             >
               <div class="btn-inner">
-                <el-icon v-if="!recorder.isRecording.value" :size="28"><Microphone /></el-icon>
+                <el-icon v-if="!recorder.isRecording.value" :size="28">
+                  <Microphone />
+                </el-icon>
                 <div v-else class="wave-bars">
                   <span v-for="i in 5" :key="i" class="voice-wave-bar" />
                 </div>
@@ -321,16 +358,24 @@
     <!-- 移动端底部操作栏 -->
     <div class="mobile-bottom-bar mobile-only">
       <el-button :disabled="!canUndo" circle size="small" @click="handleUndo">
-        <el-icon><RefreshLeft /></el-icon>
+        <el-icon>
+          <RefreshLeft />
+        </el-icon>
       </el-button>
       <el-button :disabled="!canRedo" circle size="small" @click="handleRedo">
-        <el-icon><RefreshRight /></el-icon>
+        <el-icon>
+          <RefreshRight />
+        </el-icon>
       </el-button>
       <el-button circle size="small" @click="handleReadback">
-        <el-icon><VideoPlay /></el-icon>
+        <el-icon>
+          <VideoPlay />
+        </el-icon>
       </el-button>
       <el-button type="primary" circle size="small" @click="showChat = !showChat">
-        <el-icon><ChatDotRound /></el-icon>
+        <el-icon>
+          <ChatDotRound />
+        </el-icon>
       </el-button>
     </div>
 
@@ -356,7 +401,7 @@ import { useRecorder } from '@/composables/useRecorder';
 import { useAudioPlayer } from '@/composables/useAudioPlayer';
 import { useHotkeys } from '@/composables/useHotkeys';
 import MasterDataPicker from '@/components/MasterDataPicker.vue';
-import type { MasterDataItem, TemplateField } from '@/types';
+import type { TemplateField } from '@/types';
 import api from '@/api/index';
 import dayjs from 'dayjs';
 
@@ -493,10 +538,11 @@ function openMasterDataPicker(field: TemplateField) {
   showMasterPicker.value = true;
 }
 
-function handleMasterDataSelected(item: MasterDataItem) {
+function handleMasterDataSelected(item: any) {
+  console.log(item, 999);
   // 回填主数据
   // @ts-expect-error
-  formStore.setFieldValue(pickerTargetField.value, item.dataName, 'master_data');
+  formStore.setFieldValue(pickerTargetField.value, item.kksCode, 'master_data');
 
   // 回填关联字段
   if (item.dataValues) {
@@ -738,7 +784,6 @@ function scrollToBottom() {
   box-shadow:
     0 10px 28px rgb(126 72 24 / 7%),
     0 0 0 1px rgb(255 255 255 / 70%) inset;
-  backdrop-filter: blur(12px);
 }
 
 .header-info {
@@ -1768,7 +1813,6 @@ function scrollToBottom() {
   background: rgb(255 250 245 / 97%);
   border-top: 1px solid #f0dfcf;
   box-shadow: 0 -8px 24px rgb(126 72 24 / 9%);
-  backdrop-filter: blur(12px);
 
   :deep(.el-button) {
     color: #806b5b;
@@ -1795,7 +1839,6 @@ function scrollToBottom() {
 /* Loading */
 :deep(.el-loading-mask) {
   background: rgb(255 250 245 / 78%);
-  backdrop-filter: blur(2px);
 }
 
 :deep(.el-loading-spinner .path) {
@@ -1812,7 +1855,7 @@ function scrollToBottom() {
 }
 
 /* 平板与移动端 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .voice-form-page {
     width: 100%;
     max-width: none;
@@ -1893,7 +1936,7 @@ function scrollToBottom() {
 }
 
 /* 小屏幕 */
-@media (width <= 480px) {
+@media (width <=480px) {
   .voice-form-page {
     padding: 10px;
   }

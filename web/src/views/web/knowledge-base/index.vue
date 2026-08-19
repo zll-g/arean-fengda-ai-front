@@ -159,14 +159,61 @@
                   <span>{{ t('knowledgeBase.documentManage') }}</span>
                 </div>
 
-                <el-button
-                  type="primary"
-                  class="upload-doc-btn"
-                  :disabled="!state.knowledgeBaseId"
-                  @click="triggerSingleUpload"
-                >
-                  {{ t('knowledgeBase.uploadDocument') }}
-                </el-button>
+                <div class="upload-actions">
+                  <!-- 文档级分片配置（可选，随上传随参生效；不配置=跟随知识库/全局默认） -->
+                  <el-popover
+                    v-model:visible="splitConfigPopoverVisible"
+                    placement="bottom-end"
+                    trigger="click"
+                    :width="460"
+                    popper-class="kb-upload-split-popover"
+                  >
+                    <template #reference>
+                      <el-button
+                        class="split-config-btn"
+                        :class="{ 'has-config': !!uploadSplitConfig }"
+                        :disabled="!state.knowledgeBaseId"
+                      >
+                        <el-icon>
+                          <Setting />
+                        </el-icon>
+                        {{ t('splitConfigForm.configButton') }}
+                      </el-button>
+                    </template>
+
+                    <SplitConfigForm ref="splitConfigFormRef" v-model="uploadSplitConfig" />
+                  </el-popover>
+
+                  <el-tag
+                    v-if="uploadSplitConfig"
+                    class="split-config-tag"
+                    type="warning"
+                    effect="plain"
+                    closable
+                    @close="uploadSplitConfig = null"
+                  >
+                    {{ t('splitConfigForm.configuredTag') }} · {{ uploadStrategyLabel }}
+                  </el-tag>
+
+                  <el-button
+                    class="refresh-doc-btn"
+                    :icon="Refresh"
+                    :loading="refreshing"
+                    :disabled="!state.knowledgeBaseId"
+                    title="刷新"
+                    aria-label="刷新"
+                    @click="handleManualRefresh"
+                  />
+
+                  <el-button
+                    type="primary"
+                    class="upload-doc-btn"
+                    :disabled="!state.knowledgeBaseId"
+                    @click="triggerSingleUpload"
+                  >
+                    {{ t('knowledgeBase.uploadDocument') }}
+                  </el-button>
+                </div>
               </div>
 
               <el-upload
@@ -244,7 +291,14 @@
                       </div>
 
                       <div class="doc-info">
-                        <div class="name">{{ scope.row.originalName }}</div>
+                        <el-tooltip
+                          effect="dark"
+                          placement="top"
+                          :content="scope.row.originalName || '-'"
+                          :disabled="!scope.row.originalName"
+                        >
+                          <div class="name">{{ scope.row.originalName }}</div>
+                        </el-tooltip>
                         <div class="meta">
                           {{ formatFileSize(scope.row.fileSize) }} · {{ scope.row.segmentCount }}
                           {{ t('knowledgeBase.table.segmentUnit') }}
@@ -294,12 +348,19 @@
 
                 <el-table-column
                   :label="t('knowledgeBase.table.action')"
-                  width="320"
+                  width="310"
                   align="center"
                   fixed="right"
                 >
                   <template #default="scope">
                     <div style="display: flex; justify-content: space-around">
+                      <div
+                        style="color: #409eff; cursor: pointer"
+                        @click="handlePreviewFile(scope.row)"
+                      >
+                        {{ t('knowledgeBase.table.preview') }}
+                      </div>
+
                       <div
                         v-if="!scope.row.__isHistory"
                         style="color: #409eff; cursor: pointer"
@@ -348,37 +409,50 @@
       </el-main>
     </el-container>
 
-    <AddOrEdit ref="kbDialogRef" @refresh="getKnowledgeList" />
+    <AddOrEdit ref="kbDialogRef" @refresh="handleKnowledgeRefresh" />
+
+    <FilePreviewDialog ref="filePreviewDialogRef" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import {
+  Delete,
+  Document,
+  Edit,
+  Menu,
+  Plus,
+  Refresh,
+  Search,
+  Setting,
+} from '@element-plus/icons-vue';
 import api from '@/api';
-import { Delete, Document, Edit, Menu, Plus, Search, UploadFilled } from '@element-plus/icons-vue';
 import 'element-plus/theme-chalk/display.css';
 import AddOrEdit from './components/addOrEdit.vue';
+import FilePreviewDialog from '@/components/filePreviewDialog/index.vue';
+import SplitConfigForm from '@/components/split-config/SplitConfigForm.vue';
+import type { SplitConfigDto } from '@/api/modules/split';
 import { ElMessage, ElMessageBox } from 'element-plus';
-
-type SplitStrategy = 'recursive' | 'paragraph' | 'sentence' | 'semantic' | 'fixed';
-
-const { t, locale } = useI18n();
-
+import { useRouter } from 'vue-router';
 const router = useRouter();
 
-/** 跳转分片管理工作台(独立路由页,支持直达链接与浏览器前进后退) */
+type SplitStrategy = 'recursive' | 'paragraph' | 'sentence' | 'semantic' | 'fixed' | 'custom';
+
+const { t, locale } = useI18n();
+/** 跳转分片管理工作台(独立路由页,支持直达链接与浏览器前进后退;name 用于页面头展示文档名) */
 const goSplitManagement = (row: any) => {
   if (!row?.id) return;
 
   router.push({
     name: 'SplitManagement',
     params: { documentId: String(row.id) },
+    query: { name: row.originalName || '' },
   });
 };
-
 const splitStrategyKeyMap: Record<SplitStrategy, string> = {
+  custom: 'knowledgeBase.splitStrategy.custom',
   recursive: 'knowledgeBase.splitStrategy.recursive',
   paragraph: 'knowledgeBase.splitStrategy.paragraph',
   sentence: 'knowledgeBase.splitStrategy.sentence',
@@ -403,6 +477,37 @@ const supportedFormats = ref('');
 
 // 当前版本更新对应的文档 uuid
 const versionUpdateUuid = ref('');
+
+// ==================== 文档级分片配置（上传可选） ====================
+/** 本次上传随参的文档级分片配置；null=跟随知识库级/全局默认（不携带任何分片字段） */
+const uploadSplitConfig = ref<SplitConfigDto | null>(null);
+const splitConfigPopoverVisible = ref(false);
+const splitConfigFormRef = ref();
+
+/** 已配置徽标上的策略可读名 */
+const uploadStrategyLabel = computed(() => {
+  const strategy = uploadSplitConfig.value?.strategy;
+
+  return strategy ? t(`splitManagement.strategyName.${strategy}`) : '';
+});
+
+/** SplitConfigDto(前端 strategy 命名) → 上传 DTO 字段(splitStrategy 命名)，仅带非空字段 */
+const buildUploadSplitPayload = (): Record<string, any> => {
+  const cfg = uploadSplitConfig.value;
+
+  if (!cfg) return {};
+
+  const payload: Record<string, any> = {};
+
+  if (cfg.strategy) payload.splitStrategy = cfg.strategy;
+  if (cfg.chunkSize != null) payload.chunkSize = cfg.chunkSize;
+  if (cfg.chunkOverlap != null) payload.chunkOverlap = cfg.chunkOverlap;
+  if (cfg.sizeUnit) payload.sizeUnit = cfg.sizeUnit;
+  if (cfg.tableRowSplitEnabled != null) payload.tableRowSplitEnabled = cfg.tableRowSplitEnabled;
+  if (cfg.tableRowBatchSize != null) payload.tableRowBatchSize = cfg.tableRowBatchSize;
+
+  return payload;
+};
 
 const statusKeyMap: Record<string, string> = {
   PENDING: 'knowledgeBase.status.pending',
@@ -440,9 +545,43 @@ const state = reactive({
   knowledgeBaseId: '',
 });
 
-const kbDialogRef = ref<any>(null);
+// ==================== 状态缓存：返回页面时避免空白闪现 ====================
+const CACHE_KEY = 'knowledgeBase_cache';
 
-// 轮询配置
+const saveCacheState = () => {
+  sessionStorage.setItem(
+    CACHE_KEY,
+    JSON.stringify({
+      menuData: state.menuData,
+      knowledgeBaseId: state.knowledgeBaseId,
+      tableData: state.tableData,
+      statisticalInfo: state.statisticalInfo,
+    }),
+  );
+};
+
+const restoreCacheState = () => {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const data = JSON.parse(cached);
+      state.menuData = data.menuData || [];
+      state.knowledgeBaseId = data.knowledgeBaseId || '';
+      state.tableData = data.tableData || [];
+      state.statisticalInfo = data.statisticalInfo || {};
+      return true;
+    }
+  } catch {
+    // 缓存数据损坏，忽略
+  }
+  return false;
+};
+
+const kbDialogRef = ref<any>(null);
+const filePreviewDialogRef = ref<InstanceType<typeof FilePreviewDialog>>();
+const refreshing = ref(false);
+
+// ==================== 详情自动轮询（上传后文档处理中时自动刷新） ====================
 const POLLING_INTERVAL = 3000;
 const detailPollingTimer = ref<number | null>(null);
 const isDetailPollingRequesting = ref(false);
@@ -671,6 +810,15 @@ const handleApplyStatusChange = async (
 const handleApplySwitchClick = (row: any) => {
   const newValue = String(row.isApply) === '1' ? '0' : '1';
 
+  // 开启时，先将同 uuid 的其他版本全部关闭，确保只有一个版本被应用
+  if (newValue === '1' && row.uuid) {
+    state.tableData.forEach((item: any) => {
+      if (item.uuid === row.uuid && item !== row && String(item.isApply) === '1') {
+        item.isApply = '0';
+      }
+    });
+  }
+
   row.isApply = newValue;
 
   handleApplyStatusChange(row, newValue);
@@ -882,6 +1030,13 @@ const handleSingleUploadChange = async (file: any) => {
   }
 
   try {
+    if (splitConfigFormRef.value && !splitConfigFormRef.value.validate()) {
+      ElMessage.warning(t('splitConfigForm.overlapRule'));
+      resetSingleUploadInput();
+      versionUpdateUuid.value = '';
+      return;
+    }
+
     const { data } = await api.base.getoDssUpload('fengda-file', rawFile);
 
     const params: any = {
@@ -890,9 +1045,12 @@ const handleSingleUploadChange = async (file: any) => {
       originalName: data.fileOriginalName,
       savedFileName: data.fileName,
       fileSize: data.fileSize,
+      bucketName: data.bucketName,
+      // 可选：文档级分片配置随参（先于分片/向量化生效；NULL=跟随知识库/全局）
+      ...buildUploadSplitPayload(),
     };
 
-    // 只有点击“更新版本”时才额外携带 uuid
+    // 只有点击”更新版本”时才额外携带 uuid
     if (versionUpdateUuid.value) {
       params.uuid = versionUpdateUuid.value;
     }
@@ -905,6 +1063,30 @@ const handleSingleUploadChange = async (file: any) => {
     getDetail(state.knowledgeBaseId, {
       refreshList: true,
     });
+
+    // 版本更新后，确保同 uuid 只有一个版本被应用（最新版本）
+    if (versionUpdateUuid.value) {
+      const uuid = versionUpdateUuid.value;
+      const appliedDocs = state.tableData
+        .filter((item: any) => String(item.uuid || '') === uuid && String(item.isApply) === '1')
+        .sort((a, b) => compareVersionDesc(a, b));
+
+      // 保留最新版本（排序后第一个），关闭其余旧版本的应用状态
+      for (let i = 1; i < appliedDocs.length; i++) {
+        const doc = appliedDocs[i];
+        doc.isApply = '0';
+        try {
+          await api.base.updateApplyFileStatus({
+            knowledgeBaseId: state.knowledgeBaseId,
+            documentId: doc.documentId || doc.id,
+            uuid: doc.uuid,
+            apply: '0',
+          });
+        } catch {
+          // 单个接口失败不影响其他处理
+        }
+      }
+    }
   } finally {
     // 上传结束后清空版本更新状态
     versionUpdateUuid.value = '';
@@ -952,6 +1134,11 @@ const handleDragUploadChange = (_file: any, fileList: any[]) => {
     }
 
     try {
+      if (splitConfigFormRef.value && !splitConfigFormRef.value.validate()) {
+        ElMessage.warning(t('splitConfigForm.overlapRule'));
+        return;
+      }
+
       const { data } = await api.base.getoDssUploads('fengda-file', files);
 
       const docFiles = Object.values(data).map((item: any) => ({
@@ -959,11 +1146,14 @@ const handleDragUploadChange = (_file: any, fileList: any[]) => {
         originalName: item.fileOriginalName,
         savedFileName: item.fileName,
         fileSize: item.fileSize,
+        bucketName: item.bucketName,
       }));
 
       await api.base.createDocByFiles({
         knowledgeBaseId: state.knowledgeBaseId,
         files: docFiles,
+        // 批级分片配置：整批文档统一应用（可选，NULL=跟随知识库/全局）
+        ...buildUploadSplitPayload(),
       });
 
       ElMessage.success(t('knowledgeBase.message.batchUploadSuccess'));
@@ -1008,14 +1198,28 @@ const formatFileSize = (bytes: number, decimals = 2) => {
   return `${parseFloat(size.toFixed(decimals))} ${units[index]}`;
 };
 
-const getKnowledgeList = () => {
+const handleKnowledgeRefresh = () => {
+  getKnowledgeList();
+
+  if (state.knowledgeBaseId) {
+    getDetail(state.knowledgeBaseId);
+  }
+};
+
+const getKnowledgeList = (fromCache = false) => {
   api.base.getKnowledgeList({ page: 1, limit: 9999 }).then((res) => {
     state.menuData = res.data;
+    saveCacheState();
 
     if (res.data.length > 0 && !state.knowledgeBaseId) {
       const firstId = res.data[0].id;
 
       getDetail(firstId, {
+        refreshList: false,
+      });
+    } else if (fromCache && state.knowledgeBaseId) {
+      // 从缓存恢复后，后台刷新当前知识库详情（静默更新，避免空白闪现）
+      getDetail(state.knowledgeBaseId, {
         refreshList: false,
       });
     }
@@ -1039,6 +1243,7 @@ const getDetail = async (
   clearDetailPolling();
 
   state.knowledgeBaseId = id;
+  saveCacheState();
   isDetailPollingRequesting.value = true;
 
   try {
@@ -1054,6 +1259,7 @@ const getDetail = async (
 
     state.tableData = documentRes.data;
     state.statisticalInfo = statsRes.data;
+    saveCacheState();
 
     if (options.refreshList) {
       getKnowledgeList();
@@ -1079,6 +1285,26 @@ const getDetail = async (
   }
 };
 
+/**
+ * 手动刷新当前知识库详情。
+ * 仅替代 getDetail 原有的自动轮询，不影响重建索引的独立轮询。
+ */
+const handleManualRefresh = async () => {
+  const id = state.knowledgeBaseId;
+
+  if (!id || refreshing.value) return;
+
+  refreshing.value = true;
+
+  try {
+    await getDetail(id, {
+      refreshList: true,
+    });
+  } finally {
+    refreshing.value = false;
+  }
+};
+
 const removeKnowledge = (id: string) => {
   ElMessageBox.confirm(
     t('knowledgeBase.message.deleteKnowledgeConfirm'),
@@ -1100,6 +1326,7 @@ const removeKnowledge = (id: string) => {
       state.knowledgeBaseId = '';
       state.tableData = [];
       state.statisticalInfo = {};
+      sessionStorage.removeItem(CACHE_KEY);
 
       getKnowledgeList();
     });
@@ -1131,8 +1358,15 @@ const editKnowledge = (item: any) => {
   kbDialogRef.value?.open(item);
 };
 
+const handlePreviewFile = (row: any) => {
+  filePreviewDialogRef.value?.open(row);
+};
+
 onMounted(() => {
-  getKnowledgeList();
+  // 先从缓存恢复，避免返回页面时出现空白闪现
+  const hasCache = restoreCacheState();
+  // 后台拉取最新数据（有缓存时静默更新）
+  getKnowledgeList(hasCache);
   getKnowledgeSupportedFormats();
 });
 
@@ -1168,7 +1402,6 @@ onBeforeUnmount(() => {
     background: rgb(255 255 255 / 96%);
     border-bottom: 1px solid #f0dfcf;
     box-shadow: 0 4px 14px rgb(126 72 24 / 5%);
-    backdrop-filter: blur(12px);
 
     .navbar-title {
       font-size: 15px;
@@ -1431,7 +1664,6 @@ onBeforeUnmount(() => {
         border-radius: 9px;
         box-shadow: 0 5px 14px rgb(126 72 24 / 8%);
         opacity: 0;
-        backdrop-filter: blur(8px);
         transition: opacity 0.2s ease;
 
         .op-icon {
@@ -1725,6 +1957,79 @@ onBeforeUnmount(() => {
         .el-icon {
           font-size: 18px;
           color: #f97316;
+        }
+      }
+
+      /* 上传动作区：分片配置(可选) + 刷新 + 上传按钮 */
+      .upload-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+
+        .split-config-btn {
+          height: 38px;
+          padding: 0 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #fff;
+          background: linear-gradient(135deg, #ff9a3d 0%, #f97316 100%);
+          border: 1px solid #ff8a26;
+          border-radius: 10px;
+          box-shadow: 0 6px 16px rgb(249 115 22 / 20%);
+          transition:
+            background 0.2s ease,
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+
+          .el-icon {
+            margin-right: 4px;
+          }
+
+          &:hover:not(.is-disabled) {
+            background: linear-gradient(135deg, #ff8a26 0%, #e9680a 100%);
+            box-shadow: 0 8px 20px rgb(249 115 22 / 26%);
+            transform: translateY(-1px);
+          }
+
+          &.is-disabled {
+            color: #fff;
+            background: #ffc89a;
+            border-color: #ffc89a;
+            box-shadow: none;
+          }
+        }
+      }
+
+      /* 手动刷新按钮 */
+      .refresh-doc-btn {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        color: #f97316;
+        background: #fff7ef;
+        border: 1px solid #ffc58f;
+        border-radius: 10px;
+        box-shadow: 0 5px 14px rgb(249 115 22 / 10%);
+        transition:
+          color 0.2s ease,
+          background 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+
+        &:hover:not(.is-disabled) {
+          color: #fff;
+          background: linear-gradient(135deg, #ff9a3d 0%, #f97316 100%);
+          border-color: #ff8a26;
+          box-shadow: 0 7px 18px rgb(249 115 22 / 22%);
+          transform: translateY(-1px);
+        }
+
+        &.is-disabled {
+          color: #d8b89d;
+          background: #fffaf5;
+          border-color: #f0dfcf;
+          box-shadow: none;
         }
       }
 
@@ -2187,7 +2492,7 @@ onBeforeUnmount(() => {
 }
 
 /* 大屏统计卡片改为单行 7 列，释放更多空间给文档列表 */
-@media (width >= 1200px) {
+@media (width >=1200px) {
   .main-content {
     .content-card {
       .stat-row {
@@ -2219,7 +2524,7 @@ onBeforeUnmount(() => {
 }
 
 /* 移动端 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .knowledge-app {
     background: #fff9f3;
   }
@@ -2258,6 +2563,14 @@ onBeforeUnmount(() => {
         gap: 12px;
       }
 
+      .upload-actions {
+        gap: 8px;
+      }
+
+      .refresh-doc-btn {
+        flex-shrink: 0;
+      }
+
       .upload-doc-btn {
         flex-shrink: 0;
         padding: 0 14px;
@@ -2276,7 +2589,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .main-content {
     padding: 10px;
 
@@ -2290,6 +2603,15 @@ onBeforeUnmount(() => {
 
     .document-manager-title {
       font-size: 16px !important;
+    }
+
+    .upload-actions {
+      gap: 8px !important;
+    }
+
+    .refresh-doc-btn {
+      width: 36px !important;
+      height: 36px !important;
     }
 
     .upload-doc-btn {

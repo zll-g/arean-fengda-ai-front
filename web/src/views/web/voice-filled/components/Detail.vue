@@ -4,7 +4,9 @@
     <div class="detail-header">
       <div class="header-left">
         <el-button text @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>
         </el-button>
       </div>
       <div class="header-center">
@@ -18,7 +20,10 @@
       <div class="header-right">
         <el-dropdown trigger="click">
           <el-button type="primary">
-            操作 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            操作
+            <el-icon class="el-icon--right">
+              <ArrowDown />
+            </el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
@@ -26,13 +31,22 @@
                 :disabled="formData?.status === 'submitted'"
                 @click="handleContinueFill"
               >
-                <el-icon><Microphone /></el-icon> 继续语音填单
+                <el-icon>
+                  <Microphone />
+                </el-icon>
+                继续语音填单
               </el-dropdown-item>
-              <el-dropdown-item @click="handleReadback">
-                <el-icon><VideoPlay /></el-icon> 语音回读
-              </el-dropdown-item>
+              <!-- <el-dropdown-item @click="handleReadback">
+                <el-icon>
+                  <VideoPlay />
+                </el-icon>
+                语音回读
+              </el-dropdown-item> -->
               <el-dropdown-item @click="handleValidate">
-                <el-icon><CircleCheck /></el-icon> 智能校验
+                <el-icon>
+                  <CircleCheck />
+                </el-icon>
+                智能校验
               </el-dropdown-item>
               <el-dropdown-item
                 divided
@@ -42,17 +56,26 @@
                 <el-icon><Select /></el-icon> 确认表单
               </el-dropdown-item>
               <el-dropdown-item :disabled="formData?.status !== 'confirmed'" @click="handleSubmit">
-                <el-icon><Upload /></el-icon> 提交表单
+                <el-icon>
+                  <Upload />
+                </el-icon>
+                提交表单
               </el-dropdown-item>
-              <el-dropdown-item divided @click="handleInherit">
-                <el-icon><CopyDocument /></el-icon> 继承创建新表单
-              </el-dropdown-item>
+              <!-- <el-dropdown-item divided @click="handleInherit">
+                <el-icon>
+                  <CopyDocument />
+                </el-icon>
+                继承创建新表单
+              </el-dropdown-item> -->
               <el-dropdown-item
                 :disabled="formData?.status === 'submitted'"
                 type="danger"
                 @click="handleDelete"
               >
-                <el-icon><Delete /></el-icon> 删除
+                <el-icon>
+                  <Delete />
+                </el-icon>
+                删除
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -86,7 +109,9 @@
                     }}
                   </span>
                   <el-tooltip content="敏感数据已脱敏">
-                    <el-icon class="sensitive-icon"><Lock /></el-icon>
+                    <el-icon class="sensitive-icon">
+                      <Lock />
+                    </el-icon>
                   </el-tooltip>
                 </template>
                 <!-- 选择类型：显示label -->
@@ -104,7 +129,10 @@
           <!-- 校验警告 -->
           <div v-if="warnings.length > 0" class="validation-section">
             <h4 class="section-title">
-              <el-icon color="#f59e0b"><WarningFilled /></el-icon> 智能校验提醒
+              <el-icon color="#f59e0b">
+                <WarningFilled />
+              </el-icon>
+              智能校验提醒
             </h4>
             <div class="warning-list">
               <el-alert
@@ -138,7 +166,9 @@
                       {{ record.actionLabel }}
                     </el-tag>
                     <span v-if="record.source" class="record-source">
-                      <el-icon><component :is="record.source === 'voice' ? 'Microphone' : 'Edit'" /></el-icon>
+                      <el-icon>
+                        <component :is="record.source === 'voice' ? 'Microphone' : 'Edit'" />
+                      </el-icon>
                       {{ record.source === 'voice' ? '语音' : '手动' }}
                     </span>
                   </div>
@@ -194,8 +224,12 @@
                 :class="msg.role"
               >
                 <div class="msg-avatar">
-                  <el-icon v-if="msg.role === 'user'"><User /></el-icon>
-                  <el-icon v-else><Cpu /></el-icon>
+                  <el-icon v-if="msg.role === 'user'">
+                    <User />
+                  </el-icon>
+                  <el-icon v-else>
+                    <Cpu />
+                  </el-icon>
                 </div>
                 <div class="msg-body">
                   <div class="msg-content">{{ msg.content }}</div>
@@ -251,7 +285,7 @@
 
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { useAudioPlayer } from '@/composables/useAudioPlayer';
+// import { useAudioPlayer } from '@/composables/useAudioPlayer';
 import type {
   FormData as FormDataType,
   FormFillRecord,
@@ -266,7 +300,7 @@ import api from '@/api';
 import { computed, onMounted, ref } from 'vue';
 const router = useRouter();
 const route = useRoute();
-const audioPlayer = useAudioPlayer();
+// const audioPlayer = useAudioPlayer();
 
 const formId = computed(() => Number(route.params.id));
 const loading = ref(false);
@@ -407,25 +441,25 @@ function formatJson(obj: any) {
 
 async function handleContinueFill() {
   if (formData.value) {
-    router.push(`/form/${formData.value.templateId}?formDataId=${formData.value.id}`);
+    router.push(`/web/form/${formData.value.templateId}?formDataId=${formData.value.id}`);
   }
 }
 
-async function handleReadback() {
-  if (!formData.value || !templateDetail.value) return;
-  try {
-    const res = await api.voiceForm.readbackForm(
-      formData.value.templateId,
-      formData.value.formValues,
-    );
-    if (res.data?.audioBase64) {
-      audioPlayer.playBase64(res.data.audioBase64);
-      ElMessage.success('正在朗读...');
-    }
-  } catch {
-    console.log(111);
-  }
-}
+// async function handleReadback() {
+//   if (!formData.value || !templateDetail.value) return;
+//   try {
+//     const res = await api.voiceForm.readbackForm(
+//       formData.value.templateId,
+//       formData.value.formValues,
+//     );
+//     if (res.data?.audioBase64) {
+//       audioPlayer.playBase64(res.data.audioBase64);
+//       ElMessage.success('正在朗读...');
+//     }
+//   } catch {
+//     console.log(111);
+//   }
+// }
 
 async function handleValidate() {
   if (!formData.value) return;
@@ -445,8 +479,24 @@ async function handleValidate() {
   }
 }
 
+function validateRequiredFields(): string[] {
+  if (!templateDetail.value?.fields || !formData.value) return [];
+  return templateDetail.value.fields
+    .filter((f) => f.required === 1)
+    .filter((f) => {
+      const val = formData.value!.formValues[f.fieldCode];
+      return val === undefined || val === null || val === '';
+    })
+    .map((f) => f.fieldName);
+}
+
 async function handleConfirm() {
   if (!formData.value) return;
+  const missing = validateRequiredFields();
+  if (missing.length > 0) {
+    ElMessage.warning(`请填写以下必填字段：${missing.join('、')}`);
+    return;
+  }
   await ElMessageBox.confirm('确认表单内容无误？', '确认');
   const res = await api.voiceForm.confirmForm(formData.value.id);
   formData.value = res.data;
@@ -455,20 +505,25 @@ async function handleConfirm() {
 
 async function handleSubmit() {
   if (!formData.value) return;
+  const missing = validateRequiredFields();
+  if (missing.length > 0) {
+    ElMessage.warning(`请填写以下必填字段：${missing.join('、')}`);
+    return;
+  }
   await ElMessageBox.confirm('提交后不可修改，确定提交？', '提交');
   const res = await api.voiceForm.submitForm(formData.value.id);
   formData.value = res.data;
   ElMessage.success('表单已提交');
 }
 
-async function handleInherit() {
-  // 加载全部模板
-  const res = await api.voiceForm.getTemplateList();
-  allTemplates.value = (res.data || []).filter(
-    (t: Template) => t.id !== formData.value?.templateId,
-  );
-  showInheritDialog.value = true;
-}
+// async function handleInherit() {
+//   // 加载全部模板
+//   const res = await api.voiceForm.getTemplateList();
+//   allTemplates.value = (res.data || []).filter(
+//     (t: Template) => t.id !== formData.value?.templateId,
+//   );
+//   showInheritDialog.value = true;
+// }
 
 async function doInherit() {
   if (!formData.value || !inheritTemplateId.value) return;
@@ -487,15 +542,16 @@ async function handleDelete() {
   await ElMessageBox.confirm('确定要删除此表单？', '删除', { type: 'warning' });
   await api.records.deleteForm(formData.value.id);
   ElMessage.success('已删除');
-  router.push('/web/records');
+  router.push({ name: 'form-history' });
 }
 </script>
 <style lang="scss" scoped>
 .form-detail-page {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   padding: 4px;
   margin: 0 auto;
+  overflow-y: auto;
   color: #0f172a;
 }
 
@@ -517,7 +573,6 @@ async function handleDelete() {
   border: 1px solid rgb(226 232 240 / 90%);
   border-radius: 22px;
   box-shadow: 0 16px 40px rgb(15 23 42 / 7%);
-  backdrop-filter: blur(10px);
 
   .header-left {
     :deep(.el-button) {
@@ -606,7 +661,7 @@ async function handleDelete() {
     }
   }
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     position: static;
     grid-template-columns: 1fr;
     gap: 14px;
@@ -642,7 +697,7 @@ async function handleDelete() {
   border-radius: 22px;
   box-shadow: 0 16px 42px rgb(15 23 42 / 6%);
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     padding: 4px 16px 18px;
     border-radius: 18px;
   }
@@ -689,7 +744,7 @@ async function handleDelete() {
   grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
   gap: 16px;
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     grid-template-columns: 1fr;
   }
 }
@@ -951,7 +1006,7 @@ async function handleDelete() {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 
-    @media (width <= 768px) {
+    @media (width <=768px) {
       grid-template-columns: 1fr;
     }
 
@@ -1092,7 +1147,7 @@ async function handleDelete() {
     }
   }
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     max-width: 100%;
   }
 }
@@ -1195,7 +1250,7 @@ async function handleDelete() {
 }
 
 /* 移动端细节 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .form-detail-page {
     padding: 0;
   }

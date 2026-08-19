@@ -68,6 +68,26 @@
           </div>
 
           <!-- 推荐选项 -->
+          <div
+            v-if="
+              message.suggestions &&
+                JSON.parse(message.suggestions).length &&
+                message.id ===
+                currentConversation.messages[currentConversation.messages.length - 1].id
+            "
+            class="suggestions"
+          >
+            <button
+              v-for="suggestion in JSON.parse(message.suggestions)"
+              :key="suggestion.id"
+              class="suggestion-btn"
+              @click="handleSend(suggestion, selectedTool)"
+            >
+              {{ suggestion }}
+            </button>
+          </div>
+
+          <!-- 文件引用选项 -->
           <div v-if="message.reference && JSON.parse(message.reference).length" class="suggestions">
             <button
               v-for="suggestion in JSON.parse(message.reference)"
@@ -171,19 +191,58 @@
         </div>
       </div>
 
-      <!-- 操作栏 -->
-      <MessageActions
-        v-if="message.role === 'ASSISTANT' && !message.isStreaming && !message.isError"
-        :content="message.content || ''"
-        :feedback="message.feedback"
-        :show-regenerate="true"
-        :is-hovered="isHovered"
-        :is-break="message.isBreak"
-        @copy="handleCopy"
-        @like="handleLike"
-        @dislike="handleDislike"
-        @regenerate="$emit('regenerate')"
-      />
+      <!-- 操作行：复制 / 重新生成 / 回答版本切换（同一行、统一样式风格） -->
+      <div v-if="showActionRow" class="action-row">
+        <MessageActions
+          v-if="showMessageActions"
+          :content="message.content || ''"
+          :feedback="message.feedback"
+          :show-regenerate="isLastAssistant"
+          :is-hovered="isHovered"
+          :is-break="message.isBreak"
+          :is-regenerate="isLastAssistant"
+          @copy="handleCopy"
+          @like="handleLike"
+          @dislike="handleDislike"
+          @regenerate="$emit('regenerate')"
+        />
+
+        <!-- 用户消息操作栏：仅复制 -->
+        <MessageActions
+          v-if="showUserActions"
+          :content="message.content || ''"
+          :is-hovered="isHovered"
+          :is-regenerate="false"
+          @copy="handleCopy"
+        />
+
+        <!-- 回答版本切换器：同一问题存在多个回答版本时可见（重新生成产生的旧版本可回溯） -->
+        <div
+          v-if="showVariantSwitcher"
+          class="variant-switcher"
+          :class="{ visible: isHovered, switching: message.variantSwitching }"
+        >
+          <button
+            class="variant-nav-btn"
+            type="button"
+            :disabled="!hasPrevVariant"
+            :title="t('messageBubble.prevVariant')"
+            @click="$emit('switch-variant', -1)"
+          >
+            <ChevronLeft :size="14" />
+          </button>
+          <span class="variant-label">{{ currentVariantIndex }} / {{ variantTotal }}</span>
+          <button
+            class="variant-nav-btn"
+            type="button"
+            :disabled="!hasNextVariant"
+            :title="t('messageBubble.nextVariant')"
+            @click="$emit('switch-variant', 1)"
+          >
+            <ChevronRight :size="14" />
+          </button>
+        </div>
+      </div>
 
       <FilePreviewDialog ref="filePreviewDialogRef" />
     </div>
@@ -197,30 +256,64 @@ import { useI18n } from 'vue-i18n';
 // 正确导入 markstream-vue
 import { MarkdownRender, setCustomComponents } from 'markstream-vue';
 import FilePreviewDialog from '@/components/filePreviewDialog/index.vue';
-import { AlertCircle, Bot, Download, Maximize2, RefreshCw, User, Zap } from '@/components/icons';
+import {
+  AlertCircle,
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Maximize2,
+  RefreshCw,
+  User,
+  Zap,
+} from '@/components/icons';
 import MessageActions from './MessageActions.vue';
-import { formatFileSize, formatTimestamp, getFileIcon } from '@/utils/helpers';
-import type { Attachment, Message, Suggestion, VideoInfo } from '@/types/chat';
+import { formatFileSize, formatTimestamp, generateId, getFileIcon } from '@/utils/helpers';
 import ThinkingNode from './components/ThinkingNode.vue';
+import { useChatStore } from '@/store/modules/knowledge-chat';
 import EChartsContainerNode from './components/EChartsContainerNode.vue';
 import { ElImageViewer, ElMessage } from 'element-plus';
 import api from '@/api/index.ts';
+import { API_ENDPOINTS, type ChatRequest } from '@/api/modules/chat';
+import { storeToRefs } from 'pinia';
+import { fetchEventSource as FetchEventSource } from '@microsoft/fetch-event-source';
+import { getToken, getUserInfo } from '@/utils/device';
+import {
+  type Attachment,
+  type Message,
+  MessageRole,
+  type Suggestion,
+  type VideoInfo,
+} from '@/types/chat';
 const filePreviewDialogRef = ref();
 const { t } = useI18n();
+import { ossPrefix } from '@/api/http';
 
 const props = withDefaults(
   defineProps<{
     message: Message;
     showTimestamp?: boolean;
     compact?: boolean;
+    /** 是否为消息列表中最新一条 AI 回答（仅它允许重新生成） */
+    isLastAssistant?: boolean;
   }>(),
   {
     showTimestamp: true,
     compact: false,
+    isLastAssistant: false,
   },
 );
 
 const { copy } = useClipboard({ legacy: true });
+const chatStore = useChatStore();
+const {
+  currentConversation,
+  currentConversationId,
+  selectedTool,
+  knowledgeBaseId,
+  fileNameList,
+  imgList,
+} = storeToRefs(chatStore);
 
 const emit = defineEmits<{
   retry: [];
@@ -228,6 +321,8 @@ const emit = defineEmits<{
   copy: [];
   like: [];
   dislike: [];
+  /** 切换回答版本：delta=-1 上一版 / +1 下一版 */
+  'switch-variant': [delta: number];
   'select-suggestion': [suggestion: Suggestion];
   'preview-image': [image: Attachment, index: number];
   'play-video': [video: VideoInfo];
@@ -237,7 +332,9 @@ const emit = defineEmits<{
 const isHovered = ref(false);
 const previewVisible = ref(false);
 const previewIndex = ref(0);
-
+const conversationId: any = computed(() => {
+  return currentConversation.value?.id || currentConversationId.value;
+});
 const previewUrlList = computed(() => {
   return props.message.imageList?.map((item: any) => item.url) || [];
 });
@@ -249,6 +346,70 @@ function openImagePreview(index: number) {
 
 const formattedTime = computed(() => {
   return formatTimestamp(props.message.createdAt);
+});
+
+// ==================== 操作区（复制/重新生成） ====================
+
+// 操作区可见条件：AI 回答且非流式、非错误态
+const showMessageActions = computed(() => {
+  const m = props.message;
+
+  return m.role === 'ASSISTANT' && !m.isStreaming && !m.isError;
+});
+
+// ==================== 回答版本切换器 ====================
+
+// 版本总数：变体详情已懒加载时以详情为准，否则用历史接口下发的 variantCount
+const variantTotal = computed(() => {
+  const list = props.message.variants;
+
+  if (Array.isArray(list) && list.length > 1) return list.length;
+
+  return props.message.variantCount || 0;
+});
+
+// 当前版本序号：优先变体列表中的生效项，回退消息自身 variantIndex
+const currentVariantIndex = computed(() => {
+  const list = props.message.variants;
+
+  if (Array.isArray(list) && list.length) {
+    const active = list.find((v: any) => v?.activeVariant);
+
+    if (active?.variantIndex) return Number(active.variantIndex);
+  }
+
+  return props.message.variantIndex || 1;
+});
+
+const showVariantSwitcher = computed(() => {
+  const m = props.message;
+
+  return (
+    m.role === 'ASSISTANT' &&
+    !m.isStreaming &&
+    !m.isError &&
+    !!m.userMessageId &&
+    variantTotal.value > 1
+  );
+});
+
+// 用户消息操作区可见条件
+const showUserActions = computed(() => {
+  const m = props.message;
+  return m.role === 'USER' && !m.isStreaming && !m.isError && !!m.content;
+});
+
+// 整个操作行（含操作区与版本切换器）可见条件
+const showActionRow = computed(
+  () => showMessageActions.value || showUserActions.value || showVariantSwitcher.value,
+);
+
+const hasPrevVariant = computed(() => {
+  return currentVariantIndex.value > 1 && !props.message.variantSwitching;
+});
+
+const hasNextVariant = computed(() => {
+  return currentVariantIndex.value < variantTotal.value && !props.message.variantSwitching;
 });
 
 function textCopy(data: any) {
@@ -278,7 +439,7 @@ const handlePreviewFile = async (row: any) => {
 
       filePreviewDialogRef.value?.open({
         id: row.id || row.documentId,
-        fileUrl: `/oss/downloadByFileName?fileName=${encodeURIComponent(data)}`,
+        fileUrl: `${ossPrefix}/downloadByFileName?fileName=${encodeURIComponent(data)}`,
         fileOriginalName: row.documentName || row.fileOriginalName || data,
         fileName: data,
         fileSuffix: getSuffixByName(row.documentName || data),
@@ -292,7 +453,7 @@ const handlePreviewFile = async (row: any) => {
     if (row.savedFileName) {
       filePreviewDialogRef.value?.open({
         id: row.id || row.savedFileName,
-        fileUrl: `/oss/downloadByBucketFileName?bucketName=temp&fileName=${encodeURIComponent(
+        fileUrl: `${ossPrefix}/downloadByBucketFileName?bucketName=temp&fileName=${encodeURIComponent(
           row.savedFileName,
         )}`,
         fileOriginalName: row.originalName || row.fileOriginalName || row.savedFileName,
@@ -317,20 +478,254 @@ const getSuffixByName = (fileName = '') => {
   return list.length > 1 ? list[list.length - 1] : '';
 };
 
+function getRequestSessionId(id: string) {
+  if (!id || chatStore.isTempConversationId(id)) {
+    return '';
+  }
+
+  return id;
+}
+
+function safeJsonParse<T = any>(data: any, fallback: T): T {
+  try {
+    if (!data) return fallback;
+
+    return JSON.parse(data);
+  } catch {
+    return fallback;
+  }
+}
+
+async function handleSend(text: string, searchType?: string, docSessionId?: string) {
+  let activeConversationId = conversationId.value;
+
+  if (!activeConversationId) {
+    activeConversationId = chatStore.createConversation();
+  }
+
+  const activeConversation =
+    chatStore.getConversation(activeConversationId) || currentConversation.value;
+  const currentDocSessionId = docSessionId || activeConversation?.docSessionId || generateId();
+
+  const currentImages = [...imgList.value];
+  const currentFiles = [...fileNameList.value];
+
+  // 添加用户消息到指定对话，而不是添加到当前对话
+  chatStore.addMessageToConversation(
+    activeConversationId,
+    MessageRole.USER,
+    text,
+    currentImages,
+    currentFiles,
+  );
+
+  // 添加 AI 占位消息到指定对话
+  const aiMessage = chatStore.addMessageToConversation(
+    activeConversationId,
+    MessageRole.ASSISTANT,
+    '',
+  );
+
+  chatStore.updateMessageInConversation(
+    activeConversationId,
+    aiMessage.id,
+    {
+      isStreaming: true,
+      isEnd: false,
+    },
+    true,
+  );
+
+  const ctrl = new AbortController();
+
+  chatStore.startStreaming(activeConversationId, aiMessage.id, ctrl);
+  chatStore.setConversationTyping(activeConversationId, true);
+
+  // 发送后立即清空附件，避免等待流式结束才清空
+  chatStore.clearFileNameList();
+  chatStore.clearImgList();
+
+  const params = {
+    userId: getUserInfo().userId,
+    message: text,
+    images: currentImages.map((v): any => v.fileName),
+    files: currentFiles.map((v): any => v.fileName),
+    knowledgeBaseIds: [knowledgeBaseId.value],
+    mode: searchType,
+    enableRerank: true,
+    enableHyde: true,
+    enableExpansion: false,
+    topK: 52,
+    minScore: 100,
+    docSessionId: currentDocSessionId,
+  };
+
+  const sessionId = getRequestSessionId(activeConversationId);
+
+  const request = sessionId ? Object.assign(params, { sessionId }) : params;
+
+  try {
+    await streamChats(request, activeConversationId, aiMessage.id, true, ctrl);
+  } catch (error) {
+    if ((error as Error).name !== 'AbortError') {
+      chatStore.updateMessageInConversation(
+        activeConversationId,
+        aiMessage.id,
+        {
+          isStreaming: false,
+          isEnd: true,
+          isError: true,
+          errorMessage: (error as Error).message || t('chatMain.requestFailed'),
+        },
+        true,
+      );
+    }
+  } finally {
+    chatStore.finishStreaming(activeConversationId);
+  }
+}
+
+async function streamChats(
+  request: ChatRequest,
+  conversationId: string,
+  messageId: string,
+  showTyping: boolean,
+  ctrl: AbortController,
+) {
+  let fullText = '';
+  let reference: any = null;
+  let suggestions: any = null;
+  await FetchEventSource(`${API_ENDPOINTS.CHAT_STREAM}`, {
+    openWhenHidden: true,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(request),
+    signal: ctrl.signal,
+
+    onmessage(event) {
+      if (event.event === 'reference') {
+        reference = event.data;
+        return;
+      }
+
+      if (event.event === 'suggestions') {
+        console.log(event.data);
+        suggestions = event.data;
+        return;
+      }
+
+      if (event.event === 'stopped' || event.event === 'error') {
+        chatStore.updateMessageInConversation(
+          conversationId,
+          messageId,
+          {
+            isStreaming: false,
+            isEnd: true,
+            isBreak: true,
+            messageId: event.id,
+            content: fullText,
+          },
+          true,
+        );
+
+        chatStore.finishStreaming(conversationId);
+        ctrl.abort();
+
+        return;
+      }
+
+      if (event.event === 'done') {
+        const referenceList = safeJsonParse<any[]>(reference, []);
+        const suggestionsList: any = safeJsonParse<any[]>(suggestions, []);
+        chatStore.updateReferenceInConversation(
+          conversationId,
+          messageId,
+          Array.isArray(referenceList) ? referenceList : [],
+        );
+
+        chatStore.updateSuggestionsConversation(
+          conversationId,
+          messageId,
+          Array.isArray(suggestionsList.suggestions) ? suggestionsList.suggestions : [],
+        );
+
+        chatStore.updateMessageInConversation(
+          conversationId,
+          messageId,
+          {
+            isStreaming: false,
+            isEnd: true,
+            messageId: event.id,
+            content: fullText,
+          },
+          true,
+        );
+
+        chatStore.finishStreaming(conversationId);
+        ctrl.abort();
+
+        // 如果是新对话，完成后把 temp_xxx 换成后端真实 sessionId
+        chatStore.getChat(
+          chatStore.isTempConversationId(conversationId) ? 'create' : undefined,
+          conversationId,
+        );
+
+        return;
+      }
+
+      if (event.event === 'message' && event.data) {
+        if (showTyping) {
+          chatStore.setConversationTyping(conversationId, false);
+        }
+
+        const data = safeJsonParse<{ message?: string }>(event.data, {});
+
+        fullText += data.message || '';
+
+        // 关键：更新指定 conversationId 的消息，不再更新 currentConversation
+        chatStore.updateMessageContentInConversation(conversationId, messageId, fullText);
+
+        chatStore.updateMessageInConversation(conversationId, messageId, {
+          isStreaming: true,
+          isEnd: false,
+          messageId: event.id,
+          content: fullText,
+        });
+      }
+    },
+
+    onclose() {
+      chatStore.finishStreaming(conversationId);
+    },
+
+    onerror(err) {
+      chatStore.finishStreaming(conversationId);
+      throw err;
+    },
+  });
+}
+
 async function handleDownloadDocument(row: any) {
   try {
     const { data } = await api.base.getDocumentFileName(row.documentId);
-    const res = await fetch(`/oss/downloadByFileName?fileName=${encodeURIComponent(data)}`, {
-      method: 'GET',
-    });
+    const res = await fetch(
+      `${ossPrefix}/downloadByFileName?fileName=${encodeURIComponent(data)}`,
+      {
+        method: 'GET',
+      },
+    );
 
     if (!res.ok) {
       throw new Error('下载失败');
     }
 
     const blob = await res.blob();
-    const fileName = row.fileOriginalName || row.fileName || '下载文件';
-
+    console.log(row);
+    const fileName = row.documentName || row.fileOriginalName || data || row.fileName || '下载文件';
     const blobUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
 
@@ -348,9 +743,12 @@ async function handleDownloadDocument(row: any) {
 
 async function handleDownload(fileName: string, SaveName: string) {
   try {
-    const res = await fetch(`/oss/downloadByBucketFileName?bucketName=temp&fileName=${SaveName}`, {
-      method: 'GET',
-    });
+    const res = await fetch(
+      `${ossPrefix}/downloadByBucketFileName?bucketName=temp&fileName=${SaveName}`,
+      {
+        method: 'GET',
+      },
+    );
 
     if (!res.ok) {
       throw new Error('下载失败');
@@ -808,6 +1206,91 @@ setCustomComponents('playground-demo', {
   }
 }
 
+// 操作行：复制 / 重新生成 / 回答版本切换（同一行、统一样式风格）
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+// 回答版本切换器（仅 ASSISTANT 多版本回答可见），与 MessageActions 同一卡片风格
+.variant-switcher {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  height: 40px;
+  padding: 4px;
+  pointer-events: none;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+
+  .dark & {
+    background: #2d2d3d;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+  }
+
+  &.visible {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  &.switching {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .variant-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 32px;
+    padding: 0;
+    color: #6b7280;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      color: #374151;
+      background: #f3f4f6;
+
+      .dark & {
+        color: #e5e7eb;
+        background: #374151;
+      }
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+  }
+
+  .variant-label {
+    min-width: 40px;
+    padding: 0 2px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: #6b7280;
+    text-align: center;
+    user-select: none;
+
+    .dark & {
+      color: #9ca3af;
+    }
+  }
+}
+
 .error-content {
   display: flex;
   gap: 10px;
@@ -1227,7 +1710,7 @@ setCustomComponents('playground-demo', {
   }
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .message-bubble {
     gap: 10px;
     padding: 14px 12px;

@@ -12,58 +12,52 @@
     </van-sticky>
 
     <div class="history-list">
-      <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-        <van-empty
-          v-if="conversations.length === 0"
-          class="empty-box"
-          image-size="92"
-          description="暂无对话记录"
-        />
+      <van-empty
+        v-if="conversations.length === 0"
+        class="empty-box"
+        image-size="92"
+        description="暂无对话记录"
+      />
 
-        <div
-          v-for="record in conversations"
-          :key="record.id"
-          :class="['history-card', { selected: isSelected(record.id), 'edit-mode': isEditMode }]"
-          @click="handleCardClick(record)"
-        >
-          <div
-            v-if="isEditMode"
-            class="select-checkbox"
-            @click.stop="toggleSelectRecord(record.id)"
-          >
-            <van-checkbox :model-value="isSelected(record.id)" />
-          </div>
+      <div
+        v-for="record in conversations"
+        :key="record.id"
+        :class="['history-card', { selected: isSelected(record.id), 'edit-mode': isEditMode }]"
+        @click="handleCardClick(record)"
+      >
+        <div v-if="isEditMode" class="select-checkbox" @click.stop="toggleSelectRecord(record.id)">
+          <van-checkbox :model-value="isSelected(record.id)" />
+        </div>
 
-          <van-swipe-cell class="chat-swipe-item" :disabled="isEditMode">
-            <div class="chat-card-inner" @click.stop="selectConversation(record)">
-              <div class="chat-avatar">
-                <div class="avatar-circle">
-                  <van-icon name="chat-o" />
-                </div>
+        <van-swipe-cell class="chat-swipe-item" :disabled="isEditMode">
+          <div class="chat-card-inner" @click.stop="selectConversation(record)">
+            <div class="chat-avatar">
+              <div class="avatar-circle">
+                <van-icon name="chat-o" />
               </div>
-
-              <div class="chat-info">
-                <div class="info-top">
-                  <span class="chat-title">{{ record.title || '未命名对话' }}</span>
-                  <span class="chat-time">{{ formatTime(record.lastMessageAt) }}</span>
-                </div>
-
-                <div class="chat-preview">
-                  {{ record.title || '暂无对话内容' }}
-                </div>
-              </div>
-
-              <van-icon class="arrow-icon" name="arrow" />
             </div>
 
-            <template #right>
-              <van-button square class="swipe-btn delete-btn" @click.stop="handleDelete(record.id)">
-                <van-icon name="delete-o" />
-              </van-button>
-            </template>
-          </van-swipe-cell>
-        </div>
-      </van-pull-refresh>
+            <div class="chat-info">
+              <div class="info-top">
+                <span class="chat-title">{{ record.title || '未命名对话' }}</span>
+                <span class="chat-time">{{ formatTime(record.lastMessageAt) }}</span>
+              </div>
+
+              <div class="chat-preview">
+                {{ record.title || '暂无对话内容' }}
+              </div>
+            </div>
+
+            <van-icon class="arrow-icon" name="arrow" />
+          </div>
+
+          <template #right>
+            <van-button square class="swipe-btn delete-btn" @click.stop="handleDelete(record.id)">
+              <van-icon name="delete-o" />
+            </van-button>
+          </template>
+        </van-swipe-cell>
+      </div>
     </div>
 
     <van-dialog
@@ -99,8 +93,6 @@ const chatStore = useChatStore();
 
 const { conversations } = storeToRefs(chatStore);
 
-const refreshing = ref(false);
-
 const isEditMode = ref(false);
 const selectedRecords = ref<string[]>([]);
 
@@ -119,15 +111,6 @@ const handleCreateConversation = () => {
 
 const onClickLeft = () => {
   router.back();
-};
-
-const onRefresh = () => {
-  refreshing.value = true;
-
-  setTimeout(() => {
-    refreshing.value = false;
-    showToast('刷新成功');
-  }, 600);
 };
 
 const handleCardClick = (record: any) => {
@@ -208,6 +191,7 @@ const formatTime = (timestamp?: number) => {
 };
 
 onMounted(() => {
+  chatStore.getChat();
   console.log('conversations:', conversations.value);
 });
 </script>
@@ -222,7 +206,6 @@ onMounted(() => {
 :deep(.van-nav-bar) {
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 4px 18px rgb(25 137 250 / 8%);
-  backdrop-filter: blur(10px);
 }
 
 :deep(.van-nav-bar__title) {

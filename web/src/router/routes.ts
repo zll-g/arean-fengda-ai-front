@@ -4,7 +4,13 @@ import FdHeader from '@/components/fd-layout/index.vue';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/index',
+    redirect: '/login',
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { title: '登录', requireAuth: false },
   },
   {
     path: '/index',
@@ -120,7 +126,8 @@ const routes: RouteRecordRaw[] = [
             path: 'split-management/:documentId',
             name: 'SplitManagement',
             component: () => import('@/views/web/split-management/index.vue'),
-            meta: { title: '分片管理', requireAuth: true },
+            // 带必填参数的功能页：仅从知识库文档行入口进入,不出现在导航菜单
+            meta: { title: '分片管理', requireAuth: true, hideInMenu: true },
           },
           {
             path: 'file-management',
@@ -205,6 +212,14 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       {
+        path: 'usage-stats',
+        name: 'usageStats',
+        component: () => import('@/views/web/usage-stats/index.vue'),
+        // 仅超级管理员可见:菜单显隐(fd-layout)+ 路由守卫(adminOnly)双重拦截,
+        // 后端 /usage/stats/* 接口 isSuperAccount 再兜底
+        meta: { title: '运营统计', requireAuth: true, adminOnly: true, hideInMenu: true },
+      },
+      {
         path: 'system-management',
         name: 'SystemManagement',
         meta: { title: '系统管理', requireAuth: true },
@@ -214,6 +229,12 @@ const routes: RouteRecordRaw[] = [
             name: 'OrganizationInfo',
             component: () => import('@/views/web/organization-info/index.vue'),
             meta: { title: '组织信息', requireAuth: true },
+          },
+          {
+            path: 'suggest',
+            name: 'Suggest',
+            component: () => import('@/views/web/suggest/index.vue'),
+            meta: { title: '智能推荐', requireAuth: true },
           },
         ],
       },

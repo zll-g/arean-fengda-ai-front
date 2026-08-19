@@ -18,7 +18,9 @@
           <!-- 头部 -->
           <div class="group-header">
             <div class="group-icon">
-              <el-icon :size="24"><Files /></el-icon>
+              <el-icon :size="24">
+                <Files />
+              </el-icon>
             </div>
 
             <div class="group-info">
@@ -31,7 +33,9 @@
           <div class="group-items">
             <div v-for="item in group.items" :key="item.datasourceId" class="group-item">
               <div class="item-left">
-                <el-icon color="#409eff"><Coin /></el-icon>
+                <el-icon color="#409eff">
+                  <Coin />
+                </el-icon>
                 <span class="item-alias">{{ item.alias || item.datasourceName }}</span>
               </div>
 
@@ -116,7 +120,9 @@
               >
                 <div class="ds-item-left">
                   <span class="ds-order">{{ Number(idx) + 1 }}</span>
-                  <el-icon color="#409eff"><Coin /></el-icon>
+                  <el-icon color="#409eff">
+                    <Coin />
+                  </el-icon>
                   <span class="ds-name">{{ getDsName(item.datasourceId) }}</span>
                 </div>
 
@@ -149,7 +155,9 @@
               >
                 <el-option v-for="ds in availableDs" :key="ds.id" :label="ds.name" :value="ds.id">
                   <div style="display: flex; gap: 8px; align-items: center">
-                    <el-icon><Coin /></el-icon>
+                    <el-icon>
+                      <Coin />
+                    </el-icon>
                     <span>{{ ds.name }}</span>
                     <el-tag size="small" type="info">{{ ds.dbType }}</el-tag>
                   </div>
@@ -327,7 +335,12 @@ async function handleDelete(id: string) {
 <style scoped lang="scss">
 .group-view {
   height: 100%;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   color: #4a382c;
+  color: #4a382c;
+  scrollbar-color: #e7b889 transparent;
+  scrollbar-width: thin;
   background:
     radial-gradient(circle at 100% 0%, rgb(255 138 38 / 7%) 0%, transparent 28%),
     linear-gradient(180deg, #fffaf5 0%, #fff 240px);
@@ -967,7 +980,7 @@ async function handleDelete(id: string) {
   }
 
   /* 响应式 */
-  @media (width <= 768px) {
+  @media (width <=768px) {
     padding: 12px;
 
     .toolbar {

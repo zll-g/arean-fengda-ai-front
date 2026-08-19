@@ -221,7 +221,7 @@
         <el-form-item :label="t('masterData.dialog.source')" prop="sourceCode">
           <el-select v-model="addForm.sourceCode" class="w-full">
             <el-option :label="t('masterData.source.product')" value="product" />
-            <el-option :label="t('masterData.source.supplier')" value="supplier" />
+            <el-option :label="t('masterData.source.user')" value="user" />
             <el-option :label="t('masterData.source.gms')" value="gms" />
           </el-select>
         </el-form-item>
@@ -299,7 +299,34 @@
           </el-button>
         </div>
       </el-form>
+      <div v-if="activeSource === 'user'" class="user-variable-tip">
+        <div class="variable-title">当前用户变量：</div>
 
+        <div class="variable-item">
+          <span>用户 ID</span>
+          <code>（$.userId）</code>
+        </div>
+
+        <div class="variable-item">
+          <span>用户名</span>
+          <code>（$.account）</code>
+        </div>
+
+        <div class="variable-item">
+          <span>用户工号</span>
+          <code>（$.workno）</code>
+        </div>
+
+        <div class="variable-item">
+          <span>部门 ID</span>
+          <code>（$.orgId）</code>
+        </div>
+
+        <div class="variable-item">
+          <span>用户昵称</span>
+          <code>（$.nickname）</code>
+        </div>
+      </div>
       <template #footer>
         <el-button @click="showAddDialog = false">
           {{ t('masterData.dialog.cancel') }}
@@ -346,7 +373,7 @@ const newExtVal = ref('');
 
 const sourceCount = ref({
   product: 0,
-  supplier: 0,
+  user: 0,
   gms: 0,
 });
 
@@ -368,10 +395,10 @@ const dataSources = computed(() => [
     count: sourceCount.value.product,
   },
   {
-    code: 'supplier',
-    name: t('masterData.source.supplier'),
+    code: 'user',
+    name: t('masterData.source.user'),
     icon: 'OfficeBuilding',
-    count: sourceCount.value.supplier,
+    count: sourceCount.value.user,
   },
   {
     code: 'gms',
@@ -812,7 +839,7 @@ onMounted(() => {
     }
   }
 
-  @media (width <= 768px) {
+  @media (width <=768px) {
     flex-direction: column;
     gap: 8px;
   }
@@ -1203,7 +1230,7 @@ onMounted(() => {
       }
     }
 
-    @media (width <= 768px) {
+    @media (width <=768px) {
       flex-direction: column;
     }
   }
@@ -1404,7 +1431,7 @@ onMounted(() => {
 }
 
 /* 响应式 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .master-data-page {
     padding: 12px;
   }
@@ -1460,6 +1487,47 @@ onMounted(() => {
 @media (width > 768px) {
   .mobile-data-list {
     display: none;
+  }
+}
+
+.user-variable-tip {
+  display: grid;
+  grid-template-columns: 110px repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  align-items: center;
+  padding: 14px 18px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #806b5b;
+  background: #fff7ef;
+  border-left: 3px solid #f97316;
+  border-radius: 6px;
+
+  .variable-title {
+    grid-row: span 3;
+    font-weight: 600;
+  }
+
+  .variable-item {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    align-items: center;
+
+    code {
+      font-family: inherit;
+      color: #806b5b;
+      white-space: nowrap;
+    }
+  }
+}
+
+@media (width <=768px) {
+  .user-variable-tip {
+    grid-template-columns: 1fr;
+
+    .variable-title {
+      grid-row: auto;
+    }
   }
 }
 </style>

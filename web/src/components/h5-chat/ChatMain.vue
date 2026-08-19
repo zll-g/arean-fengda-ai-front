@@ -52,12 +52,18 @@ import { useSettingsStore } from '@/store/modules/settings';
 import ChatHeader from './ChatHeader.vue';
 import MessageList from './MessageList.vue';
 import ChatInput from '@/components/input/ChatInput.vue';
-import { API_ENDPOINTS, type ChatRequest, chatApi } from '@/api/modules/chat';
+import {
+  API_ENDPOINTS,
+  type ChatRequest,
+  type RegenerateRequest,
+  chatApi,
+} from '@/api/modules/chat';
 import { MessageRole } from '@/types/chat';
 import { fetchEventSource as FetchEventSource } from '@microsoft/fetch-event-source';
 import { getToken, getUserInfo } from '@/utils/device';
 import { generateId } from '@/utils/helpers';
 import { useI18n } from 'vue-i18n';
+import { ElMessage } from 'element-plus';
 defineEmits<{
   'toggle-sidebar': [];
 }>();
@@ -270,16 +276,17 @@ function safeJsonParse<T = any>(data: any, fallback: T): T {
 }
 
 async function streamChats(
-  request: ChatRequest,
+  request: ChatRequest | RegenerateRequest,
   conversationId: string,
   messageId: string,
   showTyping: boolean,
   ctrl: AbortController,
+  endpoint = API_ENDPOINTS.CHAT_STREAM,
 ) {
   let fullText = '';
   let reference: any = null;
 
-  await FetchEventSource(`${API_ENDPOINTS.CHAT_STREAM}`, {
+  await FetchEventSource(`${endpoint}`, {
     openWhenHidden: true,
     method: 'POST',
     headers: {
@@ -455,8 +462,73 @@ async function handleRetry(messageId: string) {
   }
 }
 
-function handleRegenerate(messageId: string) {
-  handleRetry(messageId);
+async function handleRegenerate(messageId: string) {
+  const activeConversationId = conversationId.value;
+  const sessionId = getRequestSessionId(activeConversationId);
+  if (!sessionId) return;
+
+  // 从服务端获取消息列表，取最后一条 ASSISTANT 消息的 id
+  let realMessageId = messageId;
+  try {
+    const serverMessages = await chatApi.getSessionMessages(sessionId);
+    const lastAssistant = [...serverMessages].reverse().find((m: any) => m.role === 'ASSISTANT');
+    if (lastAssistant?.variantCount === 5) {
+      // 提示重新生成次数不能超过五次
+      ElMessage.warning('重新生成次数不能超过五次');
+      return;
+    }
+    if (lastAssistant?.id) {
+      realMessageId = lastAssistant.id;
+    }
+  } catch (e) {
+    console.error('获取消息列表失败', e);
+  }
+
+  chatStore.updateMessageInConversation(
+    activeConversationId,
+    messageId,
+    {
+      isError: false,
+      errorMessage: undefined,
+      isStreaming: true,
+      isEnd: false,
+      isBreak: false,
+      content: '',
+    },
+    true,
+  );
+
+  const ctrl = new AbortController();
+  chatStore.startStreaming(activeConversationId, messageId, ctrl);
+  chatStore.setConversationTyping(activeConversationId, false);
+
+  const params: RegenerateRequest = {
+    sessionId,
+    assistantMessageId: realMessageId,
+    knowledgeBaseIds: [knowledgeBaseId.value],
+    mode: localStorage.getItem('SELECTED_TOOL') || 'KNOWLEDGE_QA',
+    userId: getUserInfo().userId,
+  };
+
+  streamChats(params, activeConversationId, messageId, false, ctrl, API_ENDPOINTS.REGENERATE)
+    .catch((error) => {
+      if ((error as Error).name !== 'AbortError') {
+        chatStore.updateMessageInConversation(
+          activeConversationId,
+          messageId,
+          {
+            isStreaming: false,
+            isEnd: true,
+            isError: true,
+            errorMessage: (error as Error).message || t('chatMain.requestFailed'),
+          },
+          true,
+        );
+      }
+    })
+    .finally(() => {
+      chatStore.finishStreaming(activeConversationId);
+    });
 }
 
 function handleSuggestion(text: string) {

@@ -136,6 +136,128 @@
               <div ref="realtimeTargetChartDom" class="echarts-container" />
             </div>
           </section>
+
+          <section class="panel-card chart-card fault-panel-card">
+            <div class="panel-header">
+              <div>
+                <h2>{{ t('predictionPage.fault.title') }}</h2>
+                <p>{{ t('predictionPage.fault.desc') }}</p>
+              </div>
+
+              <div class="fault-filters">
+                <label class="field-label">
+                  <span>{{ t('predictionPage.fault.month') }}</span>
+                  <select
+                    v-model="runningFaults.month"
+                    class="custom-select"
+                    @change="onFaultMonthChange"
+                  >
+                    <option v-for="month in runningFaults.months" :key="month" :value="month">
+                      {{ formatMonthLabel(month) }}
+                    </option>
+                  </select>
+                </label>
+
+                <label class="field-label">
+                  <span>{{ t('predictionPage.fault.metricType') }}</span>
+                  <select
+                    v-model="runningFaults.metricType"
+                    class="custom-select"
+                    @change="onFaultFilterChange"
+                  >
+                    <option value="all">{{ t('predictionPage.fault.allMetrics') }}</option>
+                    <option v-for="type in runningFaults.metricTypes" :key="type" :value="type">
+                      {{ type }}
+                    </option>
+                  </select>
+                </label>
+
+                <button
+                  class="btn btn-secondary"
+                  :disabled="runningFaults.loading"
+                  @click="loadRealtimeFaults({ resetPage: true })"
+                >
+                  <span v-if="runningFaults.loading" class="loading-dot blue" />
+                  {{ t('predictionPage.fault.refresh') }}
+                </button>
+              </div>
+            </div>
+
+            <div class="fault-table-wrap">
+              <table class="fault-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('predictionPage.fault.table.alarmTime') }}</th>
+                    <th>{{ t('predictionPage.fault.table.metricType') }}</th>
+                    <th>{{ t('predictionPage.fault.table.metricName') }}</th>
+                    <th>{{ t('predictionPage.fault.table.level') }}</th>
+                    <th>{{ t('predictionPage.fault.table.currentValue') }}</th>
+                    <th>{{ t('predictionPage.fault.table.normalRange') }}</th>
+                    <th>{{ t('predictionPage.fault.table.detail') }}</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr v-if="runningFaults.items.length === 0">
+                    <td colspan="7" class="empty-cell">
+                      {{
+                        runningFaults.loading
+                          ? t('predictionPage.fault.loading')
+                          : t('predictionPage.fault.empty')
+                      }}
+                    </td>
+                  </tr>
+
+                  <tr
+                    v-for="item in runningFaults.items"
+                    :key="item.id"
+                    :class="['fault-row', faultLevelClass(item.level)]"
+                  >
+                    <td>{{ formatFaultTime(item.alarmTime) }}</td>
+                    <td>{{ item.metricType }}</td>
+                    <td>{{ item.metricName }}</td>
+                    <td>
+                      <span class="fault-level-tag" :class="faultLevelClass(item.level)">
+                        {{ faultLevelText(item.level) }}
+                      </span>
+                    </td>
+                    <td>{{ item.currentValue }}</td>
+                    <td>{{ item.normalRange }}</td>
+                    <td>{{ item.detail }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="fault-footer">
+              <span
+                class="status-text"
+                :class="{ error: runningFaults.error, loading: runningFaults.loading }"
+              >
+                {{ runningFaults.message }}
+              </span>
+
+              <div class="fault-pagination">
+                <button
+                  class="btn btn-light"
+                  :disabled="runningFaults.page <= 1 || runningFaults.loading"
+                  @click="changeFaultPage(runningFaults.page - 1)"
+                >
+                  {{ t('predictionPage.fault.pagination.prev') }}
+                </button>
+
+                <span class="page-info">{{ runningFaults.page }} / {{ runningFaultTotalPages }}</span>
+
+                <button
+                  class="btn btn-light"
+                  :disabled="runningFaults.page >= runningFaultTotalPages || runningFaults.loading"
+                  @click="changeFaultPage(runningFaults.page + 1)"
+                >
+                  {{ t('predictionPage.fault.pagination.next') }}
+                </button>
+              </div>
+            </div>
+          </section>
         </section>
 
         <aside class="side-column">
@@ -456,16 +578,16 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 
 const chartColors = [
-  '#2F80ED',
-  '#27AE60',
-  '#F2994A',
-  '#EB5757',
-  '#9B51E0',
-  '#00A3FF',
-  '#13C2C2',
-  '#FAAD14',
-  '#52C41A',
-  '#722ED1',
+  '#F58220',
+  '#FF9A3D',
+  '#E96F0F',
+  '#F3B562',
+  '#D97706',
+  '#C65D21',
+  '#E76F51',
+  '#2A9D8F',
+  '#6C63A8',
+  '#8B5E3C',
 ];
 
 function formatNumber(value) {
@@ -514,6 +636,14 @@ function shiftLocalSeconds(localValue, seconds) {
 
   const date = new Date(`${localValue}+08:00`);
   return formatChinaLocalInput(new Date(date.getTime() + seconds * 1000));
+}
+
+function formatChinaMonth(date) {
+  return formatChinaLocalInput(date).slice(0, 7).replace('-', '');
+}
+
+function formatMonthLabel(month) {
+  return month && month.length === 6 ? `${month.slice(0, 4)}-${month.slice(4, 6)}` : '--';
 }
 
 async function apiGet(path) {
@@ -629,6 +759,20 @@ const history = reactive({
   response: null,
 });
 
+const runningFaults = reactive({
+  month: formatChinaMonth(new Date()),
+  months: [formatChinaMonth(new Date())],
+  metricType: 'all',
+  metricTypes: [],
+  page: 1,
+  pageSize: 5,
+  total: 0,
+  items: [],
+  loading: false,
+  error: false,
+  message: '',
+});
+
 const realtimeMessage = computed(() => {
   return realtime.rawMessage || t(realtime.messageKey, realtime.messageParams);
 });
@@ -687,6 +831,10 @@ const targetPoints = computed(() => {
     .sort((a, b) => a.displayOrder - b.displayOrder);
 });
 
+const runningFaultTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(runningFaults.total / runningFaults.pageSize));
+});
+
 function fgrLevelClass(rec) {
   const level = rec?.level ?? 'unavailable';
   const names = ['unavailable', 'normal', 'watch', 'warning', 'danger'];
@@ -706,6 +854,98 @@ function formatFgrValue(value, unit) {
   if (!Number.isFinite(number)) return '--';
 
   return `${formatNumber(number)}${unit ? ` ${unit}` : ''}`;
+}
+
+function formatFaultTime(value) {
+  return value ? value.replace('T', ' ').replace('+08:00', '') : '--';
+}
+
+function faultLevelText(level) {
+  return level === 'fault'
+    ? t('predictionPage.fault.table.fault')
+    : t('predictionPage.fault.table.warning');
+}
+
+function faultLevelClass(level) {
+  return level === 'fault' ? 'level-fault' : 'level-warning';
+}
+
+async function onFaultMonthChange() {
+  await loadFaultOptions();
+  await loadRealtimeFaults({ resetPage: true });
+}
+
+async function onFaultFilterChange() {
+  await loadRealtimeFaults({ resetPage: true });
+}
+
+async function changeFaultPage(page) {
+  const targetPage = Math.min(Math.max(1, page), runningFaultTotalPages.value);
+  if (targetPage === runningFaults.page) return;
+
+  runningFaults.page = targetPage;
+  await loadRealtimeFaults();
+}
+
+async function loadFaultOptions() {
+  try {
+    const query = new URLSearchParams({ month: runningFaults.month });
+    const options = await apiGet('/network/api/running-faults/options?' + query.toString());
+    const months = options.months?.length ? options.months : [options.currentMonth];
+    runningFaults.months = months.includes(runningFaults.month)
+      ? months
+      : [runningFaults.month, ...months];
+    runningFaults.metricTypes = options.metricTypes ?? [];
+
+    if (!runningFaults.month) {
+      runningFaults.month = options.currentMonth;
+    }
+
+    if (
+      runningFaults.metricType !== 'all' &&
+      !runningFaults.metricTypes.includes(runningFaults.metricType)
+    ) {
+      runningFaults.metricType = 'all';
+    }
+  } catch (error) {
+    console.warn('Failed to load fault options:', error);
+  }
+}
+
+async function loadRealtimeFaults(options = {}) {
+  const { resetPage = false, silent = false } = options;
+
+  if (resetPage) {
+    runningFaults.page = 1;
+  }
+
+  if (!silent) {
+    runningFaults.loading = true;
+  }
+
+  runningFaults.error = false;
+
+  try {
+    const query = new URLSearchParams({
+      month: runningFaults.month,
+      metricType: runningFaults.metricType,
+      page: String(runningFaults.page),
+      pageSize: String(runningFaults.pageSize),
+    });
+    const result = await apiGet('/network/api/running-faults?' + query.toString());
+    runningFaults.month = result.month;
+    runningFaults.metricType = result.metricType;
+    runningFaults.page = result.page;
+    runningFaults.pageSize = result.pageSize;
+    runningFaults.total = result.total;
+    runningFaults.items = result.items ?? [];
+    runningFaults.message = t('predictionPage.fault.totalRecords', { count: result.total });
+  } catch (error) {
+    runningFaults.error = true;
+    runningFaults.message = error.message;
+  } finally {
+    runningFaults.loading = false;
+  }
 }
 
 function createEChartsLine(domElement, seriesList, clickCallback = null) {
@@ -798,18 +1038,18 @@ function createEChartsLine(domElement, seriesList, clickCallback = null) {
       trigger: 'axis',
       confine: true,
       backgroundColor: '#ffffff',
-      borderColor: '#dbe7ff',
+      borderColor: '#f4d7bf',
       borderWidth: 1,
       padding: [10, 12],
       textStyle: {
-        color: '#1f2937',
+        color: '#3d434a',
         fontSize: 12,
       },
-      extraCssText: 'box-shadow: 0 10px 28px rgba(24, 72, 132, 0.16); border-radius: 10px;',
+      extraCssText: 'box-shadow: 0 10px 28px rgba(70, 54, 44, 0.14); border-radius: 10px;',
       axisPointer: {
         type: 'line',
         lineStyle: {
-          color: 'rgba(47, 128, 237, 0.45)',
+          color: 'rgba(245, 130, 32, 0.45)',
           width: 1,
           type: 'dashed',
         },
@@ -817,7 +1057,7 @@ function createEChartsLine(domElement, seriesList, clickCallback = null) {
       formatter: (params) => {
         if (!params.length) return '';
 
-        let html = `<div style="font-weight:700;margin-bottom:8px;color:#1f2937">${params[0].value[0].replace('T', ' ').split('+')[0]}</div>`;
+        let html = `<div style="font-weight:700;margin-bottom:8px;color:#3d434a">${params[0].value[0].replace('T', ' ').split('+')[0]}</div>`;
 
         params.forEach((item) => {
           const actualVal = item.value[2];
@@ -826,11 +1066,11 @@ function createEChartsLine(domElement, seriesList, clickCallback = null) {
           if (actualVal !== null) {
             html += `
               <div style="display:flex;align-items:center;justify-content:space-between;min-width:210px;margin:5px 0;gap:16px;">
-                <span style="display:flex;align-items:center;color:#4b5563;">
+                <span style="display:flex;align-items:center;color:#505863;">
                   <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${item.color};margin-right:8px;"></span>
                   ${item.seriesName}
                 </span>
-                <span style="font-weight:700;color:#111827">${formatNumber(actualVal)}${unitStr}</span>
+                <span style="font-weight:700;color:#343a40">${formatNumber(actualVal)}${unitStr}</span>
               </div>
             `;
           }
@@ -847,28 +1087,28 @@ function createEChartsLine(domElement, seriesList, clickCallback = null) {
       icon: 'roundRect',
       selected: oldSelected || undefined,
       textStyle: {
-        color: '#667085',
+        color: '#8b929c',
         fontSize: 11,
       },
       pageTextStyle: {
-        color: '#667085',
+        color: '#8b929c',
       },
-      pageIconColor: '#2F80ED',
-      pageIconInactiveColor: '#cbd5e1',
+      pageIconColor: '#F58220',
+      pageIconInactiveColor: '#d9d2cd',
     },
     xAxis: {
       type: 'category',
       boundaryGap: false,
       axisLine: {
         lineStyle: {
-          color: '#d6e1f2',
+          color: '#d7cec8',
         },
       },
       axisTick: {
         show: false,
       },
       axisLabel: {
-        color: '#667085',
+        color: '#8b929c',
         fontSize: 11,
         formatter: (value) => (value ? value.slice(11, 19) : ''),
       },
@@ -881,13 +1121,13 @@ function createEChartsLine(domElement, seriesList, clickCallback = null) {
       min: 0,
       max: 100,
       axisLabel: {
-        color: '#667085',
+        color: '#8b929c',
         fontSize: 11,
         formatter: '{value}%',
       },
       splitLine: {
         lineStyle: {
-          color: '#eef2f8',
+          color: '#f4f0ee',
           type: 'dashed',
         },
       },
@@ -899,7 +1139,7 @@ function createEChartsLine(domElement, seriesList, clickCallback = null) {
       },
       name: t('predictionPage.chart.normalizedView'),
       nameTextStyle: {
-        color: '#98a2b3',
+        color: '#b4aaa3',
         fontSize: 11,
         padding: [0, 0, 0, 40],
       },
@@ -1226,6 +1466,9 @@ onMounted(async () => {
     const resMetadata = await apiGet('/network/api/metadata/points');
     metadata.value = resMetadata;
 
+    await loadFaultOptions();
+    await loadRealtimeFaults({ resetPage: true, silent: true });
+
     const latest = await apiGet('/network/api/history/latest?count=1');
 
     if (latest.length > 0) {
@@ -1260,15 +1503,19 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .prediction-page {
-  --primary: #2f80ed;
+  --primary: #f58220;
+  --primary-dark: #e96f0f;
+  --primary-soft: #fff4e9;
+  --primary-soft-strong: #fff0e2;
+  --primary-border: #f4d7bf;
   --success: #27ae60;
-  --warning: #f2994a;
-  --danger: #eb5757;
-  --bg: #f5f7fb;
+  --warning: #d97706;
+  --danger: #d64545;
+  --bg: #f4f0ee;
   --card: #fff;
-  --border: #e5e7eb;
-  --text: #101828;
-  --muted: #667085;
+  --border: #eee4de;
+  --text: #2f3338;
+  --muted: #8b929c;
 
   box-sizing: border-box;
   width: 100%;
@@ -1285,6 +1532,20 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
+.prediction-page::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.prediction-page::-webkit-scrollbar-thumb {
+  background: #d3cbc6;
+  border-radius: 999px;
+}
+
+.prediction-page::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 button,
 input,
 select {
@@ -1298,7 +1559,8 @@ select {
 .fgr-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(70 54 44 / 4%);
 }
 
 .page-header {
@@ -1319,7 +1581,7 @@ select {
 .title-marker {
   width: 4px;
   height: 20px;
-  background: var(--primary);
+  background: linear-gradient(180deg, #ff9a3d 0%, var(--primary) 100%);
   border-radius: 10px;
 }
 
@@ -1327,6 +1589,7 @@ select {
   margin: 0;
   font-size: 20px;
   line-height: 1.3;
+  color: #3d434a;
 }
 
 .page-desc {
@@ -1348,9 +1611,10 @@ select {
   height: 32px;
   padding: 0 12px;
   font-size: 13px;
-  color: var(--primary);
+  color: var(--primary-dark);
   white-space: nowrap;
-  background: #eef6ff;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
   border-radius: 16px;
 }
 
@@ -1359,29 +1623,39 @@ select {
   height: 7px;
   background: var(--success);
   border-radius: 50%;
+  box-shadow: 0 0 0 3px rgb(39 174 96 / 12%);
 }
 
 .tab-bar {
   display: inline-flex;
   padding: 3px;
-  background: #eef2f7;
-  border-radius: 8px;
+  background: #f4f0ee;
+  border: 1px solid #eadfd8;
+  border-radius: 6px;
 }
 
 .tab-bar button {
   min-width: 88px;
   height: 30px;
   padding: 0 14px;
-  color: var(--muted);
+  color: #505863;
   cursor: pointer;
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.tab-bar button:hover:not(.active) {
+  color: var(--primary-dark);
+  background: #fff8f2;
 }
 
 .tab-bar button.active {
   color: #fff;
-  background: var(--primary);
+  background: linear-gradient(135deg, #ff9a3d, var(--primary));
 }
 
 .workspace {
@@ -1427,7 +1701,7 @@ select {
   gap: 8px;
   align-items: center;
   font-size: 14px;
-  color: #344054;
+  color: #505863;
 }
 
 .switch-row {
@@ -1446,12 +1720,19 @@ select {
   width: 16px;
   height: 16px;
   background: #fff;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d7cec8;
   border-radius: 4px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.switch-row:hover .custom-checkbox {
+  border-color: var(--primary);
 }
 
 .switch-row input:checked + .custom-checkbox {
-  background: var(--primary);
+  background: linear-gradient(135deg, #ff9a3d, var(--primary));
   border-color: var(--primary);
 }
 
@@ -1473,16 +1754,25 @@ select {
   height: 34px;
   padding: 0 10px;
   font-size: 13px;
-  color: #344054;
+  color: #505863;
   outline: none;
   background: #fff;
-  border: 1px solid #d0d5dd;
+  border: 1px solid #d7cec8;
   border-radius: 6px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.custom-select:hover,
+.custom-input:hover {
+  border-color: #efc7a7;
 }
 
 .custom-select:focus,
 .custom-input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(245 130 32 / 12%);
 }
 
 .custom-input.datetime {
@@ -1506,6 +1796,16 @@ select {
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: 6px;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.btn:not(:disabled):active {
+  transform: translateY(1px);
 }
 
 .btn:disabled {
@@ -1515,25 +1815,42 @@ select {
 
 .btn-primary {
   color: #fff;
-  background: var(--primary);
+  background: linear-gradient(135deg, #ff9a3d, var(--primary));
+  box-shadow: 0 3px 8px rgb(245 130 32 / 16%);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f98c2f, var(--primary-dark));
 }
 
 .btn-secondary {
-  color: var(--primary);
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border-color: var(--primary-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--primary-soft-strong);
+  border-color: #efc7a7;
 }
 
 .btn-light,
 .btn-outline {
-  color: #344054;
+  color: #505863;
   background: #fff;
-  border-color: #d0d5dd;
+  border-color: #d7cec8;
+}
+
+.btn-light:hover:not(:disabled),
+.btn-outline:hover:not(:disabled) {
+  color: var(--primary-dark);
+  background: #fff8f2;
+  border-color: #efc7a7;
 }
 
 .btn-outline.active {
-  color: var(--primary);
-  background: #eff6ff;
+  color: var(--primary-dark);
+  background: var(--primary-soft-strong);
   border-color: var(--primary);
 }
 
@@ -1553,7 +1870,7 @@ select {
 }
 
 .loading-dot.blue {
-  border-color: rgb(47 128 237 / 25%);
+  border-color: rgb(245 130 32 / 25%);
   border-top-color: var(--primary);
 }
 
@@ -1599,6 +1916,11 @@ select {
   padding: 14px 16px;
 }
 
+.summary-card-primary {
+  background: linear-gradient(135deg, #fff8f2 0%, #fff 72%);
+  border-color: #f3d2b7;
+}
+
 .summary-label {
   display: block;
   margin-bottom: 8px;
@@ -1618,12 +1940,12 @@ select {
 
 .summary-value em {
   font-style: normal;
-  color: #98a2b3;
+  color: #b4aaa3;
 }
 
 .summary-value.count {
   font-size: 26px;
-  color: var(--primary);
+  color: var(--primary-dark);
 }
 
 .main-grid {
@@ -1636,7 +1958,7 @@ select {
 
 .chart-column {
   display: grid;
-  grid-template-rows: repeat(2, minmax(320px, 1fr));
+  grid-template-rows: repeat(2, minmax(320px, 1fr)) auto;
   gap: 12px;
   min-width: 0;
   min-height: 0;
@@ -1668,6 +1990,7 @@ select {
 .panel-header h2 {
   margin: 0;
   font-size: 15px;
+  color: #3d434a;
 }
 
 .panel-header p {
@@ -1688,7 +2011,7 @@ select {
   height: 26px;
   padding: 0 8px;
   font-size: 12px;
-  color: var(--primary);
+  color: var(--primary-dark);
   cursor: pointer;
   background: transparent;
   border: 0;
@@ -1696,7 +2019,7 @@ select {
 }
 
 .text-btn:hover {
-  background: #eff6ff;
+  background: #fff6ef;
 }
 
 .info-tag {
@@ -1705,8 +2028,9 @@ select {
   height: 26px;
   padding: 0 10px;
   font-size: 12px;
-  color: var(--primary);
-  background: #eff6ff;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
   border-radius: 5px;
 }
 
@@ -1732,7 +2056,7 @@ select {
 .fgr-card {
   height: 100%;
   padding: 16px;
-  border-left: 4px solid #98a2b3;
+  border-left: 4px solid #b4aaa3;
 }
 
 .fgr-header {
@@ -1747,12 +2071,13 @@ select {
   margin-bottom: 4px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary-dark);
 }
 
 .fgr-header h3 {
   margin: 0;
   font-size: 16px;
+  color: #3d434a;
 }
 
 .level-badge {
@@ -1762,7 +2087,7 @@ select {
   font-weight: 700;
   line-height: 22px;
   color: var(--muted);
-  background: #f2f4f7;
+  background: #f4f0ee;
   border-radius: 5px;
 }
 
@@ -1795,6 +2120,12 @@ select {
   align-items: center;
   justify-content: space-between;
   min-height: 30px;
+  padding: 0 6px;
+  border-radius: 5px;
+}
+
+.metric-item.suggested {
+  background: #fff8f2;
 }
 
 .metric-item span {
@@ -1809,7 +2140,7 @@ select {
 }
 
 .metric-item.suggested strong {
-  color: var(--primary);
+  color: var(--primary-dark);
 }
 
 .fgr-card.normal {
@@ -1834,8 +2165,8 @@ select {
 }
 
 .fgr-card.watch .level-badge {
-  color: var(--primary);
-  background: #eff6ff;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
 }
 
 .fgr-card.warning .level-badge {
@@ -1848,13 +2179,129 @@ select {
   background: #fff1f0;
 }
 
+/* ===== 设备故障预警 ===== */
+.fault-panel-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.fault-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.fault-table-wrap {
+  flex: 1;
+  min-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.fault-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+.fault-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #505863;
+  text-align: left;
+  white-space: nowrap;
+  background: #f8f6f4;
+  border-bottom: 1px solid var(--border);
+}
+
+.fault-table td {
+  padding: 9px 12px;
+  color: #505863;
+  border-bottom: 1px solid #f4f0ee;
+}
+
+.fault-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.fault-table tbody tr:hover {
+  background: #fffaf6;
+}
+
+.fault-row.level-warning {
+  background: #fffaea;
+}
+
+.fault-row.level-warning:hover {
+  background: #fff6d5;
+}
+
+.fault-row.level-fault {
+  background: #fff5f5;
+}
+
+.fault-row.level-fault:hover {
+  background: #ffebeb;
+}
+
+.empty-cell {
+  padding: 32px 12px !important;
+  color: var(--muted);
+  text-align: center;
+}
+
+.fault-level-tag {
+  display: inline-block;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+  border-radius: 4px;
+}
+
+.fault-level-tag.level-warning {
+  color: #b96b00;
+  background: #fff7e6;
+}
+
+.fault-level-tag.level-fault {
+  color: var(--danger);
+  background: #fff1f0;
+}
+
+.fault-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.fault-pagination {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--muted);
+  user-select: none;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .main-grid {
     grid-template-columns: 1fr;
   }
@@ -1868,7 +2315,7 @@ select {
   }
 }
 
-@media (width <= 900px) {
+@media (width <=900px) {
   .prediction-page {
     padding: 10px;
   }
@@ -1895,7 +2342,7 @@ select {
   }
 
   .chart-column {
-    grid-template-rows: none;
+    grid-template-rows: auto;
   }
 
   .chart-frame {

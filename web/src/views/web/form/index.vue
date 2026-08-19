@@ -4,7 +4,9 @@
     <div class="form-header">
       <div class="header-info">
         <el-button text @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>
         </el-button>
         <div>
           <h2 class="form-title">
@@ -21,24 +23,30 @@
       <div class="header-actions desktop-only">
         <el-tooltip content="撤销 (Ctrl+Z)">
           <el-button :disabled="!canUndo" circle @click="handleUndo">
-            <el-icon><RefreshLeft /></el-icon>
+            <el-icon>
+              <RefreshLeft />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="重做 (Ctrl+Y)">
           <el-button :disabled="!canRedo" circle @click="handleRedo">
-            <el-icon><RefreshRight /></el-icon>
+            <el-icon>
+              <RefreshRight />
+            </el-icon>
           </el-button>
         </el-tooltip>
         <el-tooltip content="智能校验">
           <el-button circle @click="handleValidate">
-            <el-icon><CircleCheck /></el-icon>
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
           </el-button>
         </el-tooltip>
-        <el-tooltip content="语音回读">
+        <!-- <el-tooltip content="语音回读">
           <el-button circle @click="handleReadback">
             <el-icon><VideoPlay /></el-icon>
           </el-button>
-        </el-tooltip>
+        </el-tooltip> -->
       </div>
     </div>
 
@@ -84,8 +92,13 @@
                 @change="onFieldChange(field.fieldCode)"
               >
                 <template v-if="field.masterDataCode" #append>
-                  <el-button @click="openMasterDataPicker(field)">
-                    <el-icon><Search /></el-icon>
+                  <el-button
+                    :disabled="field.masterDataCode !== 'gms'"
+                    @click="openMasterDataPicker(field)"
+                  >
+                    <el-icon>
+                      <Search />
+                    </el-icon>
                   </el-button>
                 </template>
               </el-input>
@@ -164,7 +177,9 @@
 
               <!-- 校验警告 -->
               <div v-if="getFieldWarning(field.fieldCode)" class="field-warning-msg">
-                <el-icon><WarningFilled /></el-icon>
+                <el-icon>
+                  <WarningFilled />
+                </el-icon>
                 {{ getFieldWarning(field.fieldCode) }}
               </div>
             </div>
@@ -180,7 +195,10 @@
             :disabled="formStore.completionRate < 100"
             @click="handleConfirm"
           >
-            <el-icon><CircleCheck /></el-icon> 确认表单
+            <el-icon>
+              <CircleCheck />
+            </el-icon>
+            确认表单
           </el-button>
           <el-button
             type="success"
@@ -189,7 +207,10 @@
             :disabled="formStore.formData?.status !== 'confirmed'"
             @click="handleSubmit"
           >
-            <el-icon><Upload /></el-icon> 提交
+            <el-icon>
+              <Upload />
+            </el-icon>
+            提交
           </el-button>
         </div>
       </div>
@@ -199,7 +220,9 @@
         <div class="chat-header">
           <h3>语音助手</h3>
           <el-button v-if="isMobile" text @click="showChat = !showChat">
-            <el-icon><component :is="showChat ? 'ArrowDown' : 'ArrowUp'" /></el-icon>
+            <el-icon>
+              <component :is="showChat ? 'ArrowDown' : 'ArrowUp'" />
+            </el-icon>
           </el-button>
         </div>
 
@@ -208,7 +231,9 @@
           v-if="voiceStore.conversationHistory.length === 0 && formStore.template?.sampleSpeech"
           class="guide-banner"
         >
-          <el-icon :size="20"><InfoFilled /></el-icon>
+          <el-icon :size="20">
+            <InfoFilled />
+          </el-icon>
           <div>
             <p class="guide-title">语音引导</p>
             <p class="guide-text">{{ formStore.template.sampleSpeech }}</p>
@@ -224,8 +249,12 @@
             :class="msg.role"
           >
             <div class="message-avatar">
-              <el-icon v-if="msg.role === 'user'"><User /></el-icon>
-              <el-icon v-else><Cpu /></el-icon>
+              <el-icon v-if="msg.role === 'user'">
+                <User />
+              </el-icon>
+              <el-icon v-else>
+                <Cpu />
+              </el-icon>
             </div>
             <div class="message-body">
               <div class="message-content">{{ msg.content }}</div>
@@ -236,7 +265,10 @@
                 size="small"
                 @click="audioPlayer.playBase64(msg.audioBase64!)"
               >
-                <el-icon><VideoPlay /></el-icon> 播放
+                <el-icon>
+                  <VideoPlay />
+                </el-icon>
+                播放
               </el-button>
             </div>
           </div>
@@ -244,7 +276,9 @@
           <!-- 处理中 -->
           <div v-if="voiceStore.state === 'processing'" class="message-item assistant">
             <div class="message-avatar">
-              <el-icon><Cpu /></el-icon>
+              <el-icon>
+                <Cpu />
+              </el-icon>
             </div>
             <div class="message-body">
               <div class="message-content typing">
@@ -268,7 +302,9 @@
             v-if="voiceStore.partialText || voiceStore.state === 'listening'"
             class="recognized-preview"
           >
-            <el-icon><Microphone /></el-icon>
+            <el-icon>
+              <Microphone />
+            </el-icon>
             <span>{{ voiceStore.partialText || '正在听...' }}</span>
           </div>
 
@@ -294,7 +330,9 @@
               @touchend.prevent="handleRecordStop"
             >
               <div class="btn-inner">
-                <el-icon v-if="!isRecording" :size="28"><Microphone /></el-icon>
+                <el-icon v-if="!isRecording" :size="28">
+                  <Microphone />
+                </el-icon>
                 <div v-else class="wave-bars">
                   <span v-for="i in 5" :key="i" class="voice-wave-bar" />
                 </div>
@@ -338,13 +376,21 @@
     <MasterDataPicker
       v-model:visible="showMasterPicker"
       :source-code="pickerSourceCode"
+      :field-code="pickerTargetField"
       :source-label="pickerSourceLabel"
+      :input-value="fieldCodeValue"
       @select="handleMasterDataSelected"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  audioBase64?: string;
+}
 import { useMediaQuery } from '@vueuse/core';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
@@ -353,7 +399,7 @@ import { useVoiceStore } from '@/store/voiceStore';
 import { useAudioPlayer } from '@/composables/useAudioPlayer';
 import { useHotkeys } from '@/composables/useHotkeys';
 import MasterDataPicker from '@/components/MasterDataPicker.vue';
-import type { MasterDataItem, TemplateField } from '@/types';
+import type { TemplateField } from '@/types';
 import { computed, nextTick, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import dayjs from 'dayjs';
@@ -361,7 +407,7 @@ import api from '@/api';
 const router = useRouter();
 const route = useRoute();
 const isMobile = useMediaQuery('(max-width: 768px)');
-
+const fieldCodeValue = ref('');
 const formStore = useFormStore();
 const voiceStore = useVoiceStore();
 const audioPlayer = useAudioPlayer();
@@ -469,7 +515,15 @@ async function loadRecommends() {
   for (const field of formStore.template.fields) {
     try {
       const res = await api.voiceForm.getRecommendedValues(templateId.value, field.fieldCode);
-      if (res.data?.length) fieldRecommends.value[field.fieldCode] = res.data;
+      // 偏好推荐值列表
+      if (res.data?.recommendedValues?.length) {
+        fieldRecommends.value[field.fieldCode] = res.data.recommendedValues;
+      }
+      // 默认值自动填入输入框
+      if (res.data?.v !== null && res.data?.v !== undefined) {
+        formStore.setFieldValue(field.fieldCode, res.data.v);
+        fieldCodeValue.value = formStore.formValues[field.fieldCode];
+      }
     } catch {
       console.log(11);
     }
@@ -489,26 +543,30 @@ function isPriceField(field: TemplateField): boolean {
 }
 
 function onFieldChange(fieldCode: string) {
+  console.log(formStore.formValues[fieldCode], 222);
   // @ts-expect-error
   formStore.setFieldValue(fieldCode, formStore.formValues[fieldCode], 'manual');
+  fieldCodeValue.value = formStore.formValues[fieldCode];
 }
 
 function setFieldFromRecommend(fieldCode: string, val: string) {
   // @ts-expect-error
   formStore.setFieldValue(fieldCode, val, 'recommend');
+  fieldCodeValue.value = formStore.formValues[fieldCode];
 }
 
 function openMasterDataPicker(field: TemplateField) {
+  fieldCodeValue.value = formStore.formValues[field.fieldCode];
   pickerSourceCode.value = field.masterDataCode || '';
   pickerSourceLabel.value = field.fieldName;
   pickerTargetField.value = field.fieldCode;
   showMasterPicker.value = true;
 }
 
-function handleMasterDataSelected(item: MasterDataItem) {
+function handleMasterDataSelected(item: any) {
   // 回填主数据
   // @ts-expect-error
-  formStore.setFieldValue(pickerTargetField.value, item.dataName, 'master_data');
+  formStore.setFieldValue(pickerTargetField.value, item.kksCode, 'master_data');
 
   // 回填关联字段
   if (item.dataValues) {
@@ -545,6 +603,9 @@ async function handleRecordStart() {
 async function handleRecordStop() {
   if (!isRecording.value) return;
 
+  // stopRecording 可能会清空 partialText，需要提前保存
+  const partialText = voiceStore.partialText?.trim() || '';
+
   voiceStore.stopRecording();
 
   const audioBlob = await stopAudioRecording();
@@ -554,20 +615,37 @@ async function handleRecordStop() {
     return;
   }
 
+  // 语音接口返回前，先展示一条临时用户消息
+  const userMessage = appendUserMessage(partialText || '语音消息（识别中...）');
+
   voiceStore.setProcessing('asr_processing', '正在识别语音...');
 
   try {
     const fd = new FormData();
+
     fd.append('audio', audioBlob, 'recording.wav');
     fd.append('templateId', String(templateId.value));
-    if (formStore.formData?.id) fd.append('formDataId', String(formStore.formData.id));
+
+    if (formStore.formData?.id) {
+      fd.append('formDataId', String(formStore.formData.id));
+    }
+
     fd.append('mode', voiceStore.mode);
-    if (voiceStore.mode === 'wizard') fd.append('wizardStep', String(voiceStore.wizardStep));
+
+    if (voiceStore.mode === 'wizard') {
+      fd.append('wizardStep', String(voiceStore.wizardStep));
+    }
+
     fd.append('currentValuesJson', JSON.stringify(formStore.formValues));
 
     const res = await api.voiceForm.processAudio(fd);
-    handlePipelineResult(res.data);
+
+    handlePipelineResult(res.data, userMessage);
   } catch (err: any) {
+    if (!partialText) {
+      userMessage.content = '语音消息（识别失败）';
+    }
+
     voiceStore.setError(err.message || '处理失败');
   }
 }
@@ -797,10 +875,34 @@ function writeString(view: DataView, offset: number, value: string) {
   }
 }
 
+function appendUserMessage(content: string) {
+  const message: ChatMessage = {
+    role: 'user',
+    content,
+    timestamp: Date.now(),
+  };
+
+  voiceStore.conversationHistory.push(message);
+  scrollToBottom();
+
+  return message;
+}
+
 async function handleTextSubmit() {
   const text = textInput.value.trim();
-  if (!text) return;
+
+  if (!text || voiceStore.state === 'processing') return;
+
   textInput.value = '';
+
+  // 立即显示发送内容
+  voiceStore.conversationHistory.push({
+    role: 'user',
+    content: text,
+    timestamp: Date.now(),
+  });
+
+  scrollToBottom();
 
   voiceStore.setProcessing('nlu_processing', '正在理解...');
 
@@ -814,29 +916,47 @@ async function handleTextSubmit() {
       currentValues: formStore.formValues,
       needTts: false,
     });
+
     handlePipelineResult(res.data);
   } catch (err: any) {
     voiceStore.setError(err.message || '处理失败');
   }
 }
 
-function handlePipelineResult(result: any) {
+function handlePipelineResult(result: any, userMessage?: ChatMessage) {
   if (!result.success) {
+    if (userMessage?.content === '语音消息（识别中...）') {
+      userMessage.content = '语音消息（识别失败）';
+    }
+
     voiceStore.setError(result.error || '处理失败');
     return;
   }
 
-  voiceStore.setResult(result.recognizedText || '', result.replyText || '', result.ttsAudioBase64);
+  // 语音识别完成后，替换临时文字
+  if (userMessage && result.recognizedText) {
+    userMessage.content = result.recognizedText;
+  }
+
+  /*
+   * 用户消息已经提前加入，所以 recognizedText 传空字符串，
+   * 避免 setResult 再添加一次用户消息。
+   */
+  voiceStore.setResult(
+    result.recognizedText || '',
+    result.replyText || '',
+    result.ttsAudioBase64,
+    false,
+  );
 
   if (result.fieldUpdates && Object.keys(result.fieldUpdates).length > 0) {
     formStore.setFieldValues(result.fieldUpdates);
   }
 
   if (result.updatedFormValues) {
-    // 同步服务端返回的完整值（含计算联动结果）
-    for (const [k, v] of Object.entries(result.updatedFormValues)) {
-      if (formStore.formValues[k] === undefined || formStore.formValues[k] === null) {
-        formStore.formValues[k] = v;
+    for (const [key, value] of Object.entries(result.updatedFormValues)) {
+      if (formStore.formValues[key] === undefined || formStore.formValues[key] === null) {
+        formStore.formValues[key] = value;
       }
     }
   }
@@ -891,26 +1011,26 @@ async function handleValidate() {
   }
 }
 
-async function handleReadback() {
-  try {
-    const res = await api.voiceForm.readbackForm(templateId.value, formStore.formValues);
-    const { text, audioBase64 } = res.data || {};
-    if (audioBase64) {
-      audioPlayer.playBase64(audioBase64);
-      voiceStore.conversationHistory.push({
-        role: 'assistant',
-        content: text,
-        timestamp: Date.now(),
-        audioBase64,
-      });
-      scrollToBottom();
-    } else if (text) {
-      ElMessage.info(text);
-    }
-  } catch {
-    console.log(111);
-  }
-}
+// async function handleReadback() {
+//   try {
+//     const res = await api.voiceForm.readbackForm(templateId.value, formStore.formValues);
+//     const { text, audioBase64 } = res.data || {};
+//     if (audioBase64) {
+//       audioPlayer.playBase64(audioBase64);
+//       voiceStore.conversationHistory.push({
+//         role: 'assistant',
+//         content: text,
+//         timestamp: Date.now(),
+//         audioBase64,
+//       });
+//       scrollToBottom();
+//     } else if (text) {
+//       ElMessage.info(text);
+//     }
+//   } catch {
+//     console.log(111);
+//   }
+// }
 
 async function handleConfirm() {
   if (formStore.missingRequiredFields.length > 0) {
@@ -932,6 +1052,7 @@ async function handleSubmit() {
     const res = await api.voiceForm.submitForm(formStore.formData.id);
     formStore.formData = res.data;
     ElMessage.success('表单已提交');
+    router.back();
   }
 }
 
@@ -1919,7 +2040,7 @@ function scrollToBottom() {
 }
 
 /* 中等屏幕 */
-@media (width <= 1200px) {
+@media (width <=1200px) {
   .form-body {
     grid-template-columns: minmax(0, 1fr) 380px;
     gap: 14px;
@@ -1935,7 +2056,7 @@ function scrollToBottom() {
 }
 
 /* 平板和移动端 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .voice-form-page {
     height: 100%;
     padding: 12px;
@@ -2033,7 +2154,7 @@ function scrollToBottom() {
 }
 
 /* 小屏幕 */
-@media (width <= 480px) {
+@media (width <=480px) {
   .voice-form-page {
     padding: 10px;
   }

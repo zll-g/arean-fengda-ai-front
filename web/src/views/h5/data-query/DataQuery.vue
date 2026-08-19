@@ -830,7 +830,6 @@ onBeforeUnmount(() => {
   border: 1px solid rgb(226 232 240 / 86%);
   border-radius: 18px;
   box-shadow: 0 10px 28px rgb(15 23 42 / 10%);
-  backdrop-filter: blur(10px);
 }
 
 .input-warning,

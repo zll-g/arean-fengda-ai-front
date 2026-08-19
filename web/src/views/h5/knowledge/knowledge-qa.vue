@@ -71,7 +71,6 @@
                 v-for="file in message.fileList"
                 :key="file.id || getFileSavedName(file) || file.originalName"
                 class="file-item"
-                @click="handleDownload(getFileName(file), getFileSavedName(file))"
               >
                 <div class="file-icon">
                   {{ getFileEmoji(getFileMimeType(file)) }}
@@ -81,15 +80,6 @@
                   <span class="file-name">{{ getFileName(file) }}</span>
                   <span class="file-size">{{ formatSize(file.size) }}</span>
                 </div>
-
-                <button
-                  class="download-btn"
-                  type="button"
-                  aria-label="下载文件"
-                  @click.stop="handleDownload(getFileName(file), getFileSavedName(file))"
-                >
-                  <Download :size="16" />
-                </button>
               </div>
             </div>
           </div>
@@ -119,6 +109,26 @@
               </div>
 
               <template
+                v-for="suggestionList in [getSuggestionList(message.suggestions)]"
+                :key="`suggestions-${message.id}-${suggestionList.length}`"
+              >
+                <div
+                  v-if="suggestionList.length && message.id === messages[messages.length - 1]?.id"
+                  class="suggestions"
+                >
+                  <button
+                    v-for="(suggestion, suggestionIndex) in suggestionList"
+                    :key="`${message.id}-${suggestionIndex}-${suggestion}`"
+                    type="button"
+                    class="suggestion-btn"
+                    @click.stop="handleSend(suggestion)"
+                  >
+                    <span class="suggestion-text">{{ suggestion }}</span>
+                  </button>
+                </div>
+              </template>
+
+              <template
                 v-for="referenceList in [getReferenceList(message.reference)]"
                 :key="`${message.id}-${referenceList.length}`"
               >
@@ -128,7 +138,6 @@
                     :key="suggestion.id || suggestion.documentName"
                     type="button"
                     class="suggestion-btn plain"
-                    @click.stop="handleDownloadDocument(suggestion)"
                   >
                     <span class="suggestion-text">{{ suggestion.documentName }}</span>
                   </button>
@@ -176,15 +185,6 @@
                       <span class="file-name">{{ getFileName(file) }}</span>
                       <span class="file-size">{{ formatSize(file.size) }}</span>
                     </div>
-
-                    <button
-                      class="download-btn"
-                      type="button"
-                      aria-label="下载文件"
-                      @click.stop="handleDownload(getFileName(file), getFileSavedName(file))"
-                    >
-                      <Download :size="16" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -221,7 +221,7 @@
           </van-button>
         </div>
 
-        <div v-if="isDocumentAnalysis && attachments.length" class="attachment-preview">
+        <div v-if="supportsAttachments && attachments.length" class="attachment-preview">
           <div
             v-for="attachment in attachments"
             :key="attachment.id"
@@ -258,7 +258,7 @@
         </div>
 
         <div class="input-box">
-          <div v-if="isDocumentAnalysis" class="upload-actions-left">
+          <div v-if="supportsAttachments" class="upload-actions-left">
             <button
               type="button"
               class="upload-action-btn"
@@ -321,6 +321,19 @@
             </van-button>
 
             <van-button
+              v-if="isStreaming"
+              round
+              type="primary"
+              class="stop-btn"
+              @click="handleStop"
+            >
+              <template #icon>
+                <StopCircle style="margin-top: 4px" :size="20" />
+              </template>
+            </van-button>
+
+            <van-button
+              v-else
               icon="send"
               type="primary"
               color="#2563eb"
@@ -330,7 +343,7 @@
               @click="handleSend(userInput.trim())"
             >
               <template #icon>
-                <Send :size="20" />
+                <Send style="margin-top: 4px" :size="20" />
               </template>
             </van-button>
           </div>
@@ -438,11 +451,11 @@ import { fetchEventSource as FetchEventSource } from '@microsoft/fetch-event-sou
 import { MarkdownRender } from 'markstream-vue';
 import { ElMessage } from 'element-plus';
 import { showImagePreview, showToast } from 'vant';
-import { API_ENDPOINTS, type ChatRequest } from '@/api/modules/chat';
-import { Download, Maximize2, Send } from '@/components/icons';
+import { API_ENDPOINTS, type ChatRequest, chatApi } from '@/api/modules/chat';
+import { Maximize2, Send, StopCircle } from '@/components/icons';
 import { useChatStore } from '@/store/modules/knowledge-chat';
 import { MessageRole } from '@/types/chat';
-import { getUserInfo } from '@/utils/device';
+import { getToken, getUserInfo } from '@/utils/device';
 import { generateId, getFileIcon } from '@/utils/helpers';
 import { useI18n } from 'vue-i18n';
 
@@ -537,6 +550,11 @@ const hiddenSelectedCount = computed(() =>
 );
 const selectedKnowledgeIds = computed(() => selectedKnowledgeList.value.map((item) => item.id));
 const isDocumentAnalysis = computed(() => selectedTool.value === 'DOCUMENT_ANALYSIS');
+/** 支持附件/图片上传的问答模式（与 web 端 ChatInput 保持一致） */
+const ATTACHMENT_SUPPORTED_TOOLS = ['KNOWLEDGE_QA', 'DEEP_SEARCH', 'DOCUMENT_ANALYSIS'];
+const supportsAttachments = computed(() =>
+  ATTACHMENT_SUPPORTED_TOOLS.includes(selectedTool.value || ''),
+);
 const imageFormats = computed(() => IMAGE_FORMATS);
 const fileFormats = computed(() =>
   supportedFormats.value.map(normalizeFormat).filter((item) => !IMAGE_FORMATS.includes(item)),
@@ -570,7 +588,7 @@ const canSendMessage = computed(() => {
     return false;
   }
 
-  return Boolean(userInput.value.trim() || (isDocumentAnalysis.value && attachments.value.length));
+  return Boolean(userInput.value.trim() || (supportsAttachments.value && attachments.value.length));
 });
 
 const inputPlaceholder = computed(() => {
@@ -605,6 +623,15 @@ function getReferenceList(reference: any) {
 
   const list = safeJsonParse<ReferenceItem[]>(reference, []);
   return Array.isArray(list) ? list : [];
+}
+
+function getSuggestionList(suggestions: any): string[] {
+  const data = Array.isArray(suggestions) ? suggestions : safeJsonParse<any>(suggestions, []);
+  const list = Array.isArray(data) ? data : data?.suggestions;
+
+  return Array.isArray(list)
+    ? list.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+    : [];
 }
 
 function getImageUrl(image: any) {
@@ -689,71 +716,8 @@ function setAttachmentStatus(id: string, patch: Partial<AttachmentWithProgress>)
   return current;
 }
 
-async function handleDownloadDocument(row: any) {
-  try {
-    const { data } = await api.base.getDocumentFileName(row.documentId);
-    const res = await fetch(`/oss/downloadByFileName?fileName=${encodeURIComponent(data)}`, {
-      method: 'GET',
-    });
-
-    if (!res.ok) {
-      throw new Error('下载失败');
-    }
-
-    const blob = await res.blob();
-    const fileName = row.fileOriginalName || row.fileName || '下载文件';
-
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-
-    a.href = blobUrl;
-    a.download = fileName;
-    a.click();
-
-    window.URL.revokeObjectURL(blobUrl);
-
-    ElMessage.success('下载成功');
-  } catch (error) {
-    console.error('下载失败：', error);
-  }
-}
-
 function getFileEmoji(mimeType?: string) {
   return getFileIcon(mimeType || '');
-}
-
-async function handleDownload(fileName: string, SaveName: string) {
-  if (!SaveName) {
-    showToast('文件信息不完整，无法下载');
-    return;
-  }
-
-  try {
-    const res = await fetch(
-      `/oss/downloadByBucketFileName?bucketName=temp&fileName=${encodeURIComponent(SaveName)}`,
-      { method: 'GET' },
-    );
-
-    if (!res.ok) {
-      throw new Error('下载失败');
-    }
-
-    const blob = await res.blob();
-
-    const blobUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-
-    a.href = blobUrl;
-    a.download = fileName || '下载文件';
-    a.click();
-
-    window.URL.revokeObjectURL(blobUrl);
-
-    showToast('下载成功');
-  } catch (error) {
-    console.error('下载失败：', error);
-    showToast('下载失败');
-  }
 }
 
 function revokeAttachmentUrl(url?: string) {
@@ -787,7 +751,7 @@ function selectTool(value: ToolType) {
   selectedTool.value = value;
   localStorage.setItem(SELECTED_TOOL_KEY, value);
 
-  if (value !== 'DOCUMENT_ANALYSIS') {
+  if (!ATTACHMENT_SUPPORTED_TOOLS.includes(value || '')) {
     clearAttachments();
   }
 }
@@ -868,11 +832,11 @@ async function handleSend(text: string) {
 
   const activeConversationId = conversationId.value || chatStore.createConversation();
   const trimmedText = text.trim();
+  const hasAttachments = supportsAttachments.value && attachments.value.length > 0;
   const messageText =
-    trimmedText ||
-    (isDocumentAnalysis.value && attachments.value.length ? '请分析已上传的文件' : '');
+    trimmedText || (isDocumentAnalysis.value && hasAttachments ? '请分析已上传的文件' : '');
 
-  if (!messageText || isStreaming.value || isTranscribing.value) return;
+  if ((!trimmedText && !hasAttachments) || isStreaming.value || isTranscribing.value) return;
 
   if (hasUploadingAttachment.value) {
     showToast('文件正在上传，请稍后再发送');
@@ -904,6 +868,9 @@ async function handleSend(text: string) {
   chatStore.clearFileNameList();
   chatStore.clearImgList();
 
+  // 发送后立即清空附件预览，不等 AI 回复
+  clearAttachments();
+
   userInput.value = '';
   await scrollToBottom();
 
@@ -925,7 +892,6 @@ async function handleSend(text: string) {
 
   try {
     await streamChats(request, activeConversationId, aiMessage.id, abortController);
-    clearAttachments();
   } catch (error) {
     if ((error as Error).name !== 'AbortError') {
       chatStore.updateMessageInConversation(activeConversationId, aiMessage.id, {
@@ -964,12 +930,12 @@ function createStreamingMessages(
 }
 
 function triggerFileInput() {
-  if (!isDocumentAnalysis.value || isBusy.value) return;
+  if (!supportsAttachments.value || isBusy.value) return;
   fileInputRef.value?.click();
 }
 
 function triggerImageInput() {
-  if (!isDocumentAnalysis.value || isBusy.value) return;
+  if (!supportsAttachments.value || isBusy.value) return;
   imageInputRef.value?.click();
 }
 
@@ -982,7 +948,7 @@ async function handleImageSelect(event: Event) {
 }
 
 async function handleSelectFiles(event: Event, type: AttachmentType) {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
 
   const input = event.target as HTMLInputElement;
   const files = Array.from(input.files || []);
@@ -995,7 +961,7 @@ async function handleSelectFiles(event: Event, type: AttachmentType) {
 }
 
 async function handlePaste(event: ClipboardEvent) {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
 
   const files = Array.from(event.clipboardData?.items || [])
     .filter((item) => item.type.startsWith('image/'))
@@ -1012,7 +978,7 @@ async function handlePaste(event: ClipboardEvent) {
 }
 
 async function addFileAsAttachment(file: File, type: AttachmentType) {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
 
   if (!isSupportedByType(file, type)) {
     showUnsupportedFileTip(file, type);
@@ -1454,6 +1420,34 @@ function resetStreamState() {
   state.abortController = null;
 }
 
+function handleStop() {
+  const activeConversationId = conversationId.value;
+
+  if (!activeConversationId) return;
+
+  const streamingMessageId = state.currentStreamingMessageId;
+
+  if (streamingMessageId) {
+    chatStore.updateMessageInConversation(
+      activeConversationId,
+      streamingMessageId,
+      {
+        isStreaming: false,
+        isEnd: true,
+        isBreak: true,
+      },
+      true,
+    );
+  }
+
+  chatStore.stopStreaming(activeConversationId);
+  resetStreamState();
+
+  if (!chatStore.isTempConversationId(activeConversationId)) {
+    chatApi.stopChat(getUserInfo().userId, activeConversationId);
+  }
+}
+
 function streamChats(
   request: ChatRequest,
   conversationId: string,
@@ -1462,6 +1456,7 @@ function streamChats(
 ): Promise<void> {
   let fullText = '';
   let reference: any = null;
+  let suggestions: any = null;
 
   const finishMessage = (patch: Record<string, any>, needRefresh = false) => {
     chatStore.updateMessageInConversation(
@@ -1488,12 +1483,18 @@ function streamChats(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify(request),
       signal: ctrl?.signal,
       onmessage(event: any) {
         if (event.event === 'reference') {
           reference = event.data;
+          return;
+        }
+
+        if (event.event === 'suggestions') {
+          suggestions = event.data;
           return;
         }
 
@@ -1510,7 +1511,10 @@ function streamChats(
 
         if (event.event === 'done') {
           const referenceList = getReferenceList(reference);
+          const suggestionList = getSuggestionList(suggestions);
+
           chatStore.updateReferenceInConversation(conversationId, messageId, referenceList);
+          chatStore.updateSuggestionsConversation(conversationId, messageId, suggestionList);
 
           finishMessage(
             {
@@ -1624,7 +1628,6 @@ onBeforeUnmount(() => {
     background: rgb(255 255 255 / 78%);
     border-bottom: 1px solid rgb(226 232 240 / 70%);
     box-shadow: 0 10px 28px rgb(15 23 42 / 5%);
-    backdrop-filter: blur(18px);
   }
 
   :deep(.van-nav-bar__title) {
@@ -1634,18 +1637,11 @@ onBeforeUnmount(() => {
     letter-spacing: 0.2px;
   }
 
-  :deep(.van-nav-bar__text),
-  :deep(.van-nav-bar .van-icon) {
-    font-weight: 650;
-    color: var(--brand);
-  }
-
   .knowledge-selector-wrap {
     z-index: 10;
     padding: 12px 14px 10px;
     background: linear-gradient(180deg, rgb(255 255 255 / 62%), rgb(255 255 255 / 38%));
     border-bottom: 1px solid rgb(226 232 240 / 58%);
-    backdrop-filter: blur(16px);
 
     .knowledge-selector {
       display: flex;
@@ -1801,18 +1797,6 @@ onBeforeUnmount(() => {
             box-shadow:
               0 14px 30px rgb(37 99 235 / 24%),
               inset 0 1px 0 rgb(255 255 255 / 22%);
-
-            &::after {
-              position: absolute;
-              right: -3px;
-              bottom: 0;
-              width: 12px;
-              height: 12px;
-              content: '';
-              background: #06b6d4;
-              border-bottom-left-radius: 14px;
-              filter: drop-shadow(2px 2px 2px rgb(37 99 235 / 10%));
-            }
           }
 
           .message-assets {
@@ -1863,7 +1847,6 @@ onBeforeUnmount(() => {
                 color: #fff;
                 background: rgb(15 23 42 / 52%);
                 border-radius: 50%;
-                backdrop-filter: blur(8px);
               }
 
               &:active img {
@@ -1966,7 +1949,6 @@ onBeforeUnmount(() => {
             border: 1px solid rgb(226 232 240 / 82%);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-soft);
-            backdrop-filter: blur(18px);
 
             &::before {
               position: absolute;
@@ -2283,7 +2265,6 @@ onBeforeUnmount(() => {
                     background: rgb(15 23 42 / 56%);
                     border: 1px solid rgb(255 255 255 / 22%);
                     border-radius: 50%;
-                    backdrop-filter: blur(8px);
                   }
 
                   &:active img {
@@ -2458,7 +2439,6 @@ onBeforeUnmount(() => {
     );
     border-top: 1px solid rgb(226 232 240 / 86%);
     box-shadow: 0 -18px 40px rgb(15 23 42 / 8%);
-    backdrop-filter: blur(20px);
 
     .input-wrapper {
       max-width: 680px;
@@ -2720,7 +2700,8 @@ onBeforeUnmount(() => {
         }
 
         .voice-btn,
-        .send-btn {
+        .send-btn,
+        .stop-btn {
           flex-shrink: 0;
           width: 42px;
           height: 42px;
@@ -2770,6 +2751,17 @@ onBeforeUnmount(() => {
           &.van-button--disabled {
             box-shadow: none;
             opacity: 0.42;
+          }
+        }
+
+        .stop-btn {
+          color: #fff;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+          box-shadow: 0 10px 22px rgb(239 68 68 / 26%);
+          animation: stop-pulse 1.6s ease-in-out infinite;
+
+          &:active {
+            transform: scale(0.95);
           }
         }
       }
@@ -2932,7 +2924,6 @@ onBeforeUnmount(() => {
     padding: 20px 18px 13px;
     background: rgb(255 255 255 / 92%);
     border-bottom: 1px solid rgb(226 232 240 / 70%);
-    backdrop-filter: blur(16px);
 
     .popup-title {
       font-size: 20px;
@@ -3086,7 +3077,6 @@ onBeforeUnmount(() => {
     background: rgb(255 255 255 / 94%);
     border-top: 1px solid #e2e8f0;
     box-shadow: 0 -12px 28px rgb(15 23 42 / 6%);
-    backdrop-filter: blur(16px);
 
     .clear-btn {
       font-weight: 750;
@@ -3103,7 +3093,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (width <= 380px) {
+@media (width <=380px) {
   .data-query-page {
     .knowledge-selector-wrap {
       padding-right: 10px;
@@ -3176,6 +3166,19 @@ onBeforeUnmount(() => {
   50% {
     opacity: 1;
     transform: scale(1.2);
+  }
+}
+
+@keyframes stop-pulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 22px rgb(239 68 68 / 26%);
+  }
+
+  50% {
+    box-shadow:
+      0 12px 26px rgb(239 68 68 / 46%),
+      0 0 0 7px rgb(239 68 68 / 10%);
   }
 }
 </style>

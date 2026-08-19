@@ -8,7 +8,7 @@
       'is-uploading-file': hasUploadingAttachments,
     }"
   >
-    <div v-if="isDocumentAnalysis && attachments.length > 0" class="attachment-preview">
+    <div v-if="supportsAttachments && attachments.length > 0" class="attachment-preview">
       <div
         v-for="attachment in attachments"
         :key="attachment.id"
@@ -72,7 +72,7 @@
     </div>
 
     <div class="input-area">
-      <div v-if="isDocumentAnalysis" class="input-actions left">
+      <div v-if="supportsAttachments" class="input-actions left">
         <button
           class="action-btn"
           type="button"
@@ -285,7 +285,26 @@ const streamingState = ref<Record<string, boolean>>({});
 const charCount = computed(() => inputText.value.length);
 const maxChars = computed(() => props.maxChars);
 const sendOnEnter = computed(() => props.sendOnEnter);
-const isDocumentAnalysis = computed(() => selectedTool.value === 'DOCUMENT_ANALYSIS');
+/**
+ * 当前工具是否支持附件/图片上传。
+ * 后端会话文档管线（docSession 上传-解析-融合检索/意图路由）是工具无关的：
+ * 知识问答、深度搜索与文档分析共用同一上传与解析链路（/chat/rag/stream 的
+ * images/files/docSessionId 参数），上传的文档参与会话文档融合检索，
+ * 文档相关问题由意图层路由到文档分析；图片随消息存档并展示。
+ * 联网搜索（WEB_SEARCH）/深度研究（DEEP_RESEARCH）不消费附件，保持关闭。
+ */
+const ATTACHMENT_SUPPORTED_TOOLS = ['KNOWLEDGE_QA', 'DEEP_SEARCH', 'DOCUMENT_ANALYSIS'];
+
+const supportsAttachments = computed(() =>
+  ATTACHMENT_SUPPORTED_TOOLS.includes(selectedTool.value || ''),
+);
+
+/** 切换到不支持附件的工具时才清空已上传附件（同链路工具互切保留，免重传） */
+function clearAttachmentsIfUnsupported(tool: string) {
+  if (!ATTACHMENT_SUPPORTED_TOOLS.includes(tool || '')) {
+    clearAttachments();
+  }
+}
 const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.uploading));
 
 const fileFormats = computed(() =>
@@ -432,9 +451,8 @@ function formatFileSize(size?: number) {
 function selectTool(value: ToolType) {
   chatStore.updateSelectedTool(value);
 
-  if (value !== 'DOCUMENT_ANALYSIS') {
-    clearAttachments();
-  }
+  // 仅切到不支持附件的工具（联网搜索/深度研究）时清空；知识问答/深度搜索/文档分析互切保留
+  clearAttachmentsIfUnsupported(value);
 
   console.log('current selected tool:', value);
 }
@@ -748,7 +766,7 @@ function showSpeechTip(message: string) {
 }
 
 async function handlePaste(event: ClipboardEvent) {
-  if (!isDocumentAnalysis.value || props.disabled) return;
+  if (!supportsAttachments.value || props.disabled) return;
 
   const clipboardData = event.clipboardData;
   if (!clipboardData) return;
@@ -830,17 +848,17 @@ function getImageExt(mimeType: string) {
 }
 
 function triggerFileInput() {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
   fileInputRef.value?.click();
 }
 
 function triggerImageInput() {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
   imageInputRef.value?.click();
 }
 
 async function handleFileSelect(event: Event) {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
 
   const input = event.target as HTMLInputElement;
   const files = Array.from(input.files || []);
@@ -860,7 +878,7 @@ async function handleFileSelect(event: Event) {
 }
 
 async function handleImageSelect(event: Event) {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
 
   const input = event.target as HTMLInputElement;
   const files = Array.from(input.files || []);
@@ -880,7 +898,7 @@ async function handleImageSelect(event: Event) {
 }
 
 async function addFileAsAttachment(file: File, type: 'image' | 'file' | 'video') {
-  if (!isDocumentAnalysis.value) return;
+  if (!supportsAttachments.value) return;
 
   const attachmentType = type === 'image' ? 'image' : 'file';
 
@@ -1051,9 +1069,7 @@ watch(inputText, () => {
 });
 
 watch(selectedTool, (newTool) => {
-  if (newTool !== 'DOCUMENT_ANALYSIS') {
-    clearAttachments();
-  }
+  clearAttachmentsIfUnsupported(newTool || '');
 });
 
 watch(
@@ -1097,7 +1113,7 @@ onMounted(() => {
     setSupportedFormats(res?.data?.formats || []);
   });
 
-  if (!isDocumentAnalysis.value) {
+  if (!supportsAttachments.value) {
     clearAttachments();
   }
 });

@@ -1,10 +1,16 @@
 <template>
   <div class="preview-pane">
-    <el-card shadow="never" class="preview-card" :body-style="{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }">
+    <el-card
+      shadow="never"
+      class="preview-card"
+      :body-style="{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }"
+    >
       <template #header>
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>{{ mode === 'compare' ? t('splitManagement.compareMode') : t('splitManagement.preview') }}</span>
+          <span>{{
+            mode === 'compare' ? t('splitManagement.compareMode') : t('splitManagement.preview')
+          }}</span>
 
           <template v-if="mode === 'single' && preview">
             <el-tag v-if="preview.parseCacheHit" type="success" size="small" effect="plain" round>
@@ -13,13 +19,23 @@
             <span class="duration">{{ t('splitManagement.duration') }} {{ formatMs(preview.durationMs) }}</span>
           </template>
 
-          <el-tag v-if="mode === 'compare' && compareResult?.parseCacheHit" type="success" size="small" effect="plain" round>
+          <el-tag
+            v-if="mode === 'compare' && compareResult?.parseCacheHit"
+            type="success"
+            size="small"
+            effect="plain"
+            round
+          >
             {{ t('splitManagement.parseCacheHit') }}
           </el-tag>
         </div>
       </template>
 
-      <div v-loading="loading" :element-loading-text="t('splitManagement.previewing')" class="preview-body">
+      <div
+        v-loading="loading"
+        :element-loading-text="t('splitManagement.previewing')"
+        class="preview-body"
+      >
         <!-- 空态 -->
         <div v-if="mode === 'idle'" class="empty-hint">
           <el-icon :size="40"><MagicStick /></el-icon>
@@ -41,7 +57,11 @@
           <div class="compare-grid">
             <div class="compare-col">
               <div class="compare-title">
-                <el-tag type="primary" size="small" effect="dark">{{ t('splitManagement.configA') }}</el-tag>
+                <el-tag type="primary" size="small" effect="dark">
+                  {{
+                    t('splitManagement.configA')
+                  }}
+                </el-tag>
                 <span class="compare-config-text">{{ describeConfig(compareResult.configA) }}</span>
               </div>
               <StatsGrid :stats="compareResult.statsA" compact />
@@ -50,7 +70,11 @@
 
             <div class="compare-col">
               <div class="compare-title">
-                <el-tag type="warning" size="small" effect="dark">{{ t('splitManagement.configB') }}</el-tag>
+                <el-tag type="warning" size="small" effect="dark">
+                  {{
+                    t('splitManagement.configB')
+                  }}
+                </el-tag>
                 <span class="compare-config-text">{{ describeConfig(compareResult.configB) }}</span>
               </div>
               <StatsGrid :stats="compareResult.statsB" compact />
@@ -124,10 +148,17 @@ const StatsGrid = (gridProps: { stats: SplitStatsVO; compact?: boolean }) => {
     { label: t('splitManagement.totalChunks'), value: s.totalChunks },
     { label: t('splitManagement.avgChars'), value: s.avgChars },
     { label: t('splitManagement.minMaxChars'), value: `${s.minChars} / ${s.maxChars}` },
-    { label: t('splitManagement.overSizeCount'), value: s.overSizeCount, warn: s.overSizeCount > 0 },
+    {
+      label: t('splitManagement.overSizeCount'),
+      value: s.overSizeCount,
+      warn: s.overSizeCount > 0,
+    },
     { label: t('splitManagement.tinyCount'), value: s.tinyCount, warn: s.tinyCount > 0 },
     { label: t('splitManagement.tableChunkCount'), value: s.tableChunkCount },
-    { label: t('splitManagement.headingCoverage'), value: `${Math.round((s.headingCoverage || 0) * 100)}%` },
+    {
+      label: t('splitManagement.headingCoverage'),
+      value: `${Math.round((s.headingCoverage || 0) * 100)}%`,
+    },
   ];
 
   return h(
@@ -166,7 +197,11 @@ const ChunkCardList = (listProps: { chunks?: ChunkPreviewVO[]; compact?: boolean
           h('span', { class: 'chunk-metric' }, `${chunk.charCount}${charsUnit()}`),
           h('span', { class: 'chunk-metric' }, `${chunk.tokenEstimate} tok`),
           chunk.contentType
-            ? h('span', { class: ['chunk-type', contentTypeTag(chunk.contentType)] }, chunk.contentType)
+            ? h(
+                'span',
+                { class: ['chunk-type', contentTypeTag(chunk.contentType)] },
+                chunk.contentType,
+              )
             : null,
           chunk.textTruncated
             ? h('span', { class: 'chunk-truncated' }, t('splitManagement.textTruncated'))
@@ -182,7 +217,7 @@ const ChunkCardList = (listProps: { chunks?: ChunkPreviewVO[]; compact?: boolean
               `${t('splitManagement.tableName')}: ${chunk.tableName}${chunk.rowRange ? ` (${chunk.rowRange})` : ''}`,
             )
           : null,
-        h('div', { class: 'chunk-text' }, chunk.text),
+        h('div', { class: 'chunk-text', title: chunk.text }, chunk.text),
       ]),
     ),
   );
@@ -197,6 +232,7 @@ ChunkCardList.props = ['chunks', 'compact'];
   flex-direction: column;
   min-width: 0;
   height: 100%;
+  min-height: 0;
 }
 
 .preview-card {
@@ -281,9 +317,9 @@ ChunkCardList.props = ['chunks', 'compact'];
 
   .compare-config-text {
     overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 12px;
     color: #806b5b;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 }
@@ -308,8 +344,8 @@ ChunkCardList.props = ['chunks', 'compact'];
     .stat-value {
       font-size: 16px;
       font-weight: 700;
-      color: #4a382c;
       font-variant-numeric: tabular-nums;
+      color: #4a382c;
     }
 
     .stat-label {
@@ -352,7 +388,9 @@ ChunkCardList.props = ['chunks', 'compact'];
     background: #fff;
     border: 1px solid #f1e1d2;
     border-radius: 10px;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
 
     &:hover {
       border-color: #ffc58f;
@@ -371,14 +409,14 @@ ChunkCardList.props = ['chunks', 'compact'];
   .chunk-index {
     font-size: 12px;
     font-weight: 700;
-    color: #f97316;
     font-variant-numeric: tabular-nums;
+    color: #f97316;
   }
 
   .chunk-metric {
     font-size: 11px;
-    color: #a18b7b;
     font-variant-numeric: tabular-nums;
+    color: #a18b7b;
   }
 
   .chunk-type {
@@ -408,18 +446,23 @@ ChunkCardList.props = ['chunks', 'compact'];
   .chunk-section {
     margin-bottom: 5px;
     overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 11px;
     color: #c88752;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .chunk-text {
+    /* 视觉行数钳制:块文本再长也不会撑破卡片,批量切块下保持网格节奏一致 */
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 8;
     font-size: 12px;
     line-height: 1.7;
     color: #5b4738;
     word-break: break-word;
     white-space: pre-wrap;
+    -webkit-box-orient: vertical;
   }
 
   &.compact .chunk-text {

@@ -6,8 +6,8 @@
     </div>
     <div class="quick-guide">
       <h3>快捷入口</h3>
-      <van-row justify="space-around" class="guide-box">
-        <van-col
+      <div class="guide-box">
+        <div
           v-for="i in item"
           :key="i.path"
           class="quick-guide-item van-haptics-feedback"
@@ -17,8 +17,8 @@
             <van-icon :name="i.icon" class="icon" />
           </div>
           <div class="text">{{ i.name }}</div>
-        </van-col>
-      </van-row>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -98,32 +98,59 @@ const JumpTo = (path: string) => {
 </script>
 
 <style scoped>
+.welcome-contain {
+  margin-bottom: 1rem;
+  background: #f7f5f2;
+}
+
 .welcome-card {
   width: 100%;
   height: 100%;
-  margin-bottom: 1.2rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
   text-align: left;
+  background: #fff;
+  border: 1px solid rgb(238 225 210 / 55%);
+  border-radius: 13px;
+  box-shadow: 0 4px 14px rgb(74 55 35 / 6%);
 }
 
 .hello-text {
   font-size: 1.6rem;
   font-weight: 700;
+  color: #263247;
 }
 
 .date-text {
+  margin-top: 0.3rem;
   font-size: 1rem;
-  opacity: 0.8;
+  color: #99a3b4;
 }
 
 .quick-guide {
+  box-sizing: border-box;
+  padding: 1rem;
   text-align: left;
+  background: #fff;
+  border: 1px solid rgb(238 225 210 / 55%);
+  border-radius: 13px;
+  box-shadow: 0 4px 14px rgb(74 55 35 / 6%);
+}
+
+.quick-guide h3 {
+  margin: 0 0 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d96216;
 }
 
 .guide-box {
+  display: flex;
   flex-wrap: nowrap;
+  gap: 0.3rem;
+  align-items: flex-start;
+  justify-content: space-between;
   width: 100%;
-  height: 100%;
-  overflow-x: auto;
 }
 
 .item-box {
@@ -131,11 +158,10 @@ const JumpTo = (path: string) => {
   flex-flow: column;
   align-items: center;
   justify-content: center;
-  width: 5rem;
-  height: 5rem;
-  margin: 0.5rem 1rem;
+  width: 100%;
+  max-width: 4.5rem;
+  aspect-ratio: 1;
   cursor: pointer;
-  background-color: aqua;
   border-radius: 15px;
 }
 
@@ -156,17 +182,23 @@ const JumpTo = (path: string) => {
 }
 
 .quick-guide-item {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
   cursor: pointer;
 }
 
 .icon {
-  margin-bottom: 0.3rem;
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 5vw, 1.5rem);
   color: white;
 }
 
 .text {
-  font-size: 0.8rem;
+  margin-top: 0.3rem;
+  font-size: clamp(0.6rem, 2.2vw, 0.8rem);
+  color: #596579;
   text-align: center;
 }
 </style>

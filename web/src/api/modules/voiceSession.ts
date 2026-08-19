@@ -1,6 +1,6 @@
 import http from '../http';
-const BaseUrl = '/api';
+import { aiPrefix } from '../http';
 export function getSessionDetail(sessionId: string) {
-  return http.get(`${BaseUrl}/voice-session/${sessionId}`);
+  return http.get(`${aiPrefix}/voice-session/${sessionId}`);
 }
 export default { getSessionDetail };

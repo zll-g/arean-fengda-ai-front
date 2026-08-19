@@ -3,17 +3,31 @@
     <!-- ==================== 用户提问 ==================== -->
     <div class="msg-row user-row">
       <div class="msg-avatar user-avatar">
-        <el-icon :size="20"><User /></el-icon>
+        <el-icon :size="20">
+          <User />
+        </el-icon>
       </div>
-      <div class="msg-content user-content">
-        <p>{{ message.question }}</p>
+      <div class="user-message-wrap">
+        <div class="msg-content user-content">
+          <p>{{ message.question }}</p>
+        </div>
+
+        <div v-if="message.question" class="lifecycle-bar">
+          <button class="action-btn" title="复制问题" @click="handleCopyQuestion">
+            <el-icon :size="15">
+              <DocumentCopy />
+            </el-icon>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- ==================== AI 回答 ==================== -->
     <div class="msg-row ai-row">
       <div class="msg-avatar ai-avatar">
-        <el-icon :size="20"><Cpu /></el-icon>
+        <el-icon :size="20">
+          <Cpu />
+        </el-icon>
       </div>
 
       <div class="ai-message-wrap">
@@ -27,20 +41,22 @@
               class="timeline-item done"
             >
               <div class="timeline-dot done-dot">
-                <el-icon :size="12"><SuccessFilled /></el-icon>
+                <el-icon :size="12">
+                  <SuccessFilled />
+                </el-icon>
               </div>
               <div class="timeline-text">
                 <span class="timeline-label">{{ stage.message }}</span>
-                <span v-if="stage.costMs" class="timeline-cost">{{
-                  stage.costText || stage.costMs + 'ms'
-                }}</span>
+                <span v-if="stage.costMs" class="timeline-cost">{{ stage.costMs }}ms</span>
               </div>
             </div>
 
             <!-- 当前正在进行的阶段 -->
             <div v-if="message.loading && message.streamingStage" class="timeline-item active">
               <div class="timeline-dot active-dot">
-                <el-icon :size="12" class="spinning"><Loading /></el-icon>
+                <el-icon :size="12" class="spinning">
+                  <Loading />
+                </el-icon>
               </div>
               <div class="timeline-text">
                 <span class="timeline-label">{{ message.streamingStage.stageName }}</span>
@@ -60,7 +76,9 @@
 
           <!-- ========== 区块2: 问题改写提示 ========== -->
           <div v-if="message.processedQuestion" class="understanding-tip">
-            <el-icon><InfoFilled /></el-icon>
+            <el-icon>
+              <InfoFilled />
+            </el-icon>
             <span>我将您的问题理解为：「{{ message.processedQuestion }}」</span>
           </div>
 
@@ -69,7 +87,9 @@
             <el-collapse-item name="sql">
               <template #title>
                 <span class="sql-collapse-title">
-                  <el-icon><Document /></el-icon>
+                  <el-icon>
+                    <Document />
+                  </el-icon>
                   {{
                     message.loading && !message.data ? 'SQL 已生成（查询中...）' : '查看生成的 SQL'
                   }}
@@ -90,7 +110,9 @@
 
           <!-- ========== 区块4: SQL 修复提示 ========== -->
           <div v-if="message.loading && message.fixRounds > 0" class="fix-notice">
-            <el-icon color="#e6a23c"><Warning /></el-icon>
+            <el-icon color="#e6a23c">
+              <Warning />
+            </el-icon>
             <span>正在进行第 {{ message.fixRounds }} 轮 SQL 自动修复...</span>
           </div>
 
@@ -108,6 +130,7 @@
           <DataTable
             v-if="showTable && message.columns?.length && message.data?.length"
             :columns="message.columns"
+            :display-columns="message.displayColumns"
             :data="message.data"
           />
 
@@ -120,22 +143,8 @@
           />
 
           <!-- ========== 区块8: 状态标签栏 ========== -->
-          <div
-            v-if="!message.loading && (message.success !== undefined || message.stopped)"
-            class="status-bar"
-          >
-            <el-tag v-if="message.stopped" type="warning" size="small" effect="plain">
-              <el-icon><VideoPause /></el-icon>
-              已停止<template v-if="message.stopReasonText">
-                · {{ message.stopReasonText }}
-              </template>
-            </el-tag>
-            <el-tag
-              v-else
-              :type="message.success ? 'success' : 'danger'"
-              size="small"
-              effect="plain"
-            >
+          <div v-if="!message.loading && message.success !== undefined" class="status-bar">
+            <el-tag :type="message.success ? 'success' : 'danger'" size="small" effect="plain">
               <el-icon>
                 <SuccessFilled v-if="message.success" />
                 <CircleCloseFilled v-else />
@@ -143,16 +152,28 @@
               {{ message.success ? '查询成功' : '查询失败' }}
             </el-tag>
             <el-tag v-if="message.costMs" type="info" size="small" effect="plain">
-              <el-icon><Timer /></el-icon> {{ message.costText || message.costMs + 'ms' }}
+              <el-icon>
+                <Timer />
+              </el-icon>
+              {{ message.costMs }}ms
             </el-tag>
             <el-tag v-if="message.rowCount > 0" size="small" effect="plain">
-              <el-icon><Grid /></el-icon> {{ message.rowCount }} 行
+              <el-icon>
+                <Grid />
+              </el-icon>
+              {{ message.rowCount }} 行
             </el-tag>
             <el-tag v-if="message.fixRounds > 0" type="warning" size="small" effect="plain">
-              <el-icon><Refresh /></el-icon> 修复{{ message.fixRounds }}轮
+              <el-icon>
+                <Refresh />
+              </el-icon>
+              修复{{ message.fixRounds }}轮
             </el-tag>
             <el-tag v-if="message.federated" type="primary" size="small" effect="plain">
-              <el-icon><Connection /></el-icon> 联邦 · {{ message.datasourceCount }}源
+              <el-icon>
+                <Connection />
+              </el-icon>
+              联邦 · {{ message.datasourceCount }}源
             </el-tag>
           </div>
 
@@ -161,58 +182,27 @@
             v-if="message.chartConfig && message.data?.length"
             :chart-config="message.chartConfig"
             :columns="message.columns"
+            :display-columns="message.displayColumns"
             :data="message.data"
           />
 
           <!-- ========== 区块10: 操作按钮 ========== -->
           <div v-if="!message.loading && message.success && message.sql" class="action-bar">
             <el-button text size="small" @click="showTable = !showTable">
-              <el-icon><Grid /></el-icon>
+              <el-icon>
+                <Grid />
+              </el-icon>
               {{ showTable ? '收起表格' : '展开表格' }}
             </el-button>
             <el-button text size="small" type="success" @click="handleConfirm">
               <el-icon><Select /></el-icon> SQL 正确
             </el-button>
             <el-button text size="small" type="warning" @click="handleFeedback">
-              <el-icon><Warning /></el-icon> SQL 有误
+              <el-icon>
+                <Warning />
+              </el-icon>
+              SQL 有误
             </el-button>
-          </div>
-
-          <!-- ========== 区块10.5: 重新回答 & 回答版本切换 ========== -->
-          <div v-if="canRegenerate || hasVariants" class="lifecycle-bar">
-            <el-button
-              v-if="canRegenerate"
-              text
-              size="small"
-              type="primary"
-              :disabled="streaming"
-              title="就当前问题重新生成一版回答（旧版本保留，可切换回溯）"
-              @click="handleRegenerate"
-            >
-              <el-icon><RefreshRight /></el-icon> 重新回答
-            </el-button>
-
-            <div v-if="hasVariants" class="variant-switcher" :class="{ switching }">
-              <el-button
-                text
-                size="small"
-                :disabled="!prevVariant || switching"
-                title="上一版本"
-                @click="handleSwitchVariant(prevVariant)"
-              >
-                <el-icon><ArrowLeft /></el-icon>
-              </el-button>
-              <span class="variant-label">{{ activeVariantPos + 1 }} / {{ variantList.length }}</span>
-              <el-button
-                text
-                size="small"
-                :disabled="!nextVariant || switching"
-                title="下一版本"
-                @click="handleSwitchVariant(nextVariant)"
-              >
-                <el-icon><ArrowRight /></el-icon>
-              </el-button>
-            </div>
           </div>
 
           <!-- ========== 区块11: 错误信息 ========== -->
@@ -234,7 +224,11 @@
 
           <!-- ========== 区块13: 推荐后续问题 ========== -->
           <div
-            v-if="!message.loading && message.suggestedQuestions?.length"
+            v-if="
+              !message.loading &&
+                message.suggestedQuestions?.length &&
+                message.id === chatStore.messages[chatStore.messages.length - 1].id
+            "
             class="suggested-questions"
           >
             <div class="suggest-label">您可能还想问：</div>
@@ -259,10 +253,53 @@
           </div>
         </div>
 
-        <!-- ========== AI 回答外部复制操作栏：不在文本组件内 ========== -->
-        <div v-if="message.answer" class="answer-copy-actions">
-          <button class="copy-answer-btn" type="button" title="复制" @click="handleCopyAnswer">
-            <el-icon :size="16"><DocumentCopy /></el-icon>
+        <!-- ========== 区块10.5: 复制 / 重新回答 / 回答版本切换（悬浮出现） ========== -->
+        <div v-if="canCopyAnswer || canRegenerate || hasVariants" class="lifecycle-bar">
+          <button
+            v-if="canCopyAnswer"
+            class="action-btn"
+            title="复制回答内容"
+            @click="handleCopyAnswer"
+          >
+            <el-icon :size="15">
+              <DocumentCopy />
+            </el-icon>
+          </button>
+
+          <button
+            v-if="canRegenerate"
+            class="action-btn"
+            title="重新回答"
+            :disabled="streaming"
+            @click="handleRegenerate"
+          >
+            <el-icon :size="15">
+              <RefreshRight />
+            </el-icon>
+          </button>
+        </div>
+
+        <div v-if="hasVariants" class="lifecycle-bar">
+          <button
+            class="action-btn"
+            title="上一版本"
+            :disabled="!prevVariant || switching"
+            @click="handleSwitchVariant(prevVariant)"
+          >
+            <el-icon :size="15">
+              <ArrowLeft />
+            </el-icon>
+          </button>
+          <span class="variant-label">{{ activeVariantPos + 1 }} / {{ variantList.length }}</span>
+          <button
+            class="action-btn"
+            title="下一版本"
+            :disabled="!nextVariant || switching"
+            @click="handleSwitchVariant(nextVariant)"
+          >
+            <el-icon :size="15">
+              <ArrowRight />
+            </el-icon>
           </button>
         </div>
       </div>
@@ -270,18 +307,19 @@
   </div>
 </template>
 
-<script setup>
-import { computed, ref } from 'vue';
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
 import { marked } from 'marked';
 import { ElMessage } from 'element-plus';
 import SqlBlock from './SqlBlock.vue';
+import { useDataQueryStore } from '@/store';
 import DataTable from './DataTable.vue';
 import ChartRenderer from './ChartRenderer.vue';
 import ClarifyOptions from './ClarifyOptions.vue';
-
+const chatStore = useDataQueryStore();
 const props = defineProps({
   message: { type: Object, required: true },
-  /** 是否消息列表最后一条（无后端行ID的新消息仅允许对最后一条发起重新回答） */
+  /** 是否消息列表最后一条（仅最新一条允许发起重新回答） */
   isLast: { type: Boolean, default: false },
   /** 全局是否有生成进行中（进行中禁用重新回答/版本切换，防止并发轮次） */
   streaming: { type: Boolean, default: false },
@@ -328,24 +366,31 @@ const renderedAnswer = computed(() => {
   }
 });
 
-// ==================== 中断 / 重新回答 / 版本切换 ====================
+// ==================== 复制 / 重新回答 / 版本切换 ====================
 
-// 是否可发起重新回答：终态（成功/失败/已停止）+ 单数据源链路 + 目标可定位
-// （有后端行ID可精确定位任意轮次；无ID仅能由后端兜底定位会话最后一轮）
+// 是否可复制回答：终态且已有回答文本
+const canCopyAnswer = computed(() => {
+  return !props.message.loading && !!props.message.answer;
+});
+
+// 是否可发起重新回答：终态（成功/失败/已停止）+ 单数据源链路 + 仅最新一条
+// （历史轮次不允许再生成新版本，仅可切换已生成的回答版本）
 const canRegenerate = computed(() => {
   const m = props.message;
   if (m.loading || m.federated) return false;
+  if (!props.isLast) return false;
 
-  const isTerminal = m.success !== undefined || m.stopped;
+  // 终态判断：优先 success/stopped，同时兜底非 loading 且有实质内容的消息
+  const isTerminal = m.success !== undefined || m.stopped || !!m.answer || !!m.sql || !!m.data;
   if (!isTerminal) return false;
 
-  return m.historyId != null || props.isLast;
+  return true;
 });
 
 // 变体列表（按变体序号正序）；多于 1 个版本时展示切换器
 const variantList = computed(() => {
   const list = Array.isArray(props.message.variants) ? [...props.message.variants] : [];
-  return list.sort((a, b) => (a?.variantIndex || 0) - (b?.variantIndex || 0));
+  return list.sort((a: any, b: any) => (a?.variantIndex || 0) - (b?.variantIndex || 0));
 });
 
 const hasVariants = computed(() => variantList.value.length > 1);
@@ -357,11 +402,11 @@ const activeVariantPos = computed(() => {
   const list = variantList.value;
   if (list.length === 0) return 0;
 
-  const activeIdx = list.findIndex((v) => v?.activeVariant);
+  const activeIdx = list.findIndex((v: any) => v?.activeVariant);
   if (activeIdx >= 0) return activeIdx;
 
   const byIndex = list.findIndex(
-    (v) => v?.variantIndex != null && v.variantIndex === props.message.variantIndex,
+    (v: any) => v?.variantIndex != null && v.variantIndex === props.message.variantIndex,
   );
   return byIndex >= 0 ? byIndex : 0;
 });
@@ -376,17 +421,7 @@ const nextVariant = computed(() =>
     : null,
 );
 
-function handleRegenerate() {
-  if (props.streaming || switching.value) return;
-  emit('regenerate');
-}
-
-function handleSwitchVariant(variant) {
-  if (!variant || switching.value || props.streaming) return;
-  emit('switchVariant', variant.id);
-}
-
-function fallbackCopyText(text) {
+function fallbackCopyText(text: any) {
   const textarea = document.createElement('textarea');
   textarea.value = text;
   textarea.setAttribute('readonly', '');
@@ -427,6 +462,36 @@ async function handleCopyAnswer() {
   }
 }
 
+async function handleCopyQuestion() {
+  const text = props.message.question || '';
+
+  if (!text) {
+    ElMessage.warning('暂无可复制内容');
+    return;
+  }
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      ElMessage.success('已复制');
+      return;
+    }
+    fallbackCopyText(text);
+  } catch {
+    fallbackCopyText(text);
+  }
+}
+
+function handleRegenerate() {
+  if (props.streaming || switching.value) return;
+  emit('regenerate');
+}
+
+function handleSwitchVariant(variant: any) {
+  if (!variant || switching.value || props.streaming) return;
+  emit('switchVariant', variant.id);
+}
+
 function handleConfirm() {
   emit('confirm', { question: props.message.question, sql: props.message.sql });
   ElMessage.success('感谢反馈！此 SQL 已加入知识库');
@@ -436,6 +501,14 @@ function handleFeedback() {
   emit('feedback', { question: props.message.question, sql: props.message.sql });
   ElMessage.info('感谢反馈！我们会持续优化');
 }
+
+watch(
+  () => props.message,
+  (newVal) => {
+    console.log(newVal);
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped lang="scss">
@@ -464,10 +537,6 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
 
   &.user-row {
     justify-content: flex-end;
-
-    .msg-content {
-      max-width: 75%;
-    }
   }
 
   &.ai-row {
@@ -485,11 +554,33 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
 
   &:hover,
   &:focus-within {
-    .answer-copy-actions {
+    .answer-copy-actions,
+    .lifecycle-bar {
       visibility: visible;
       pointer-events: auto;
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(8px);
+    }
+  }
+}
+
+.user-message-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 75%;
+
+  .msg-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  &:hover,
+  &:focus-within {
+    .lifecycle-bar {
+      pointer-events: auto;
+      opacity: 1;
+      transform: translateY(8px);
     }
   }
 }
@@ -546,7 +637,6 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
     border: 1px solid rgb(226 232 240 / 85%);
     border-radius: 18px 18px 18px 6px;
     box-shadow: $card-shadow;
-    backdrop-filter: blur(10px);
     transition:
       box-shadow 0.22s ease,
       transform 0.22s ease;
@@ -704,7 +794,7 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
   .timeline-progress-bar {
     position: absolute;
     right: 12px;
-    bottom: 8px;
+    bottom: 2px;
     left: 42px;
     height: 4px;
     overflow: hidden;
@@ -894,13 +984,17 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
   margin: 12px 0 8px;
 
   .el-tag {
-    display: inline-flex;
-    gap: 4px;
-    align-items: center;
     height: 26px;
     padding: 0 9px;
     font-weight: 500;
     border-radius: 999px;
+
+    :deep(.el-tag__content) {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      white-space: nowrap;
+    }
   }
 }
 
@@ -928,62 +1022,60 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
   }
 }
 
-// ==================== 重新回答 & 版本切换 ====================
+// ==================== 复制 / 重新回答 & 版本切换（悬浮出现，与 MessageActions 同款） ====================
 .lifecycle-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: inline-flex;
+  gap: 4px;
   align-items: center;
-  padding-top: 10px;
-  margin-top: 12px;
-  border-top: 1px dashed #e5e7eb;
+  padding: 4px;
+  pointer-events: none;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 
-  .el-button {
-    padding: 6px 10px;
-    border-radius: 999px;
-    transition:
-      transform 0.18s ease,
-      background-color 0.18s ease,
-      box-shadow 0.18s ease;
+  & + .lifecycle-bar {
+    margin-left: 8px;
+  }
+}
 
-    &:hover:not(.is-disabled) {
-      box-shadow: 0 6px 16px rgb(15 23 42 / 8%);
-      transform: translateY(-1px);
-    }
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #6b7280;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: #374151;
+    background: #f3f4f6;
   }
 
-  .variant-switcher {
-    display: inline-flex;
-    gap: 2px;
-    align-items: center;
-    padding: 2px 6px;
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 999px;
-
-    &.switching {
-      opacity: 0.6;
-    }
-
-    .el-button {
-      padding: 4px 6px;
-      border-radius: 999px;
-
-      &:hover:not(.is-disabled) {
-        box-shadow: none;
-        transform: none;
-      }
-    }
-
-    .variant-label {
-      min-width: 52px;
-      font-size: 12px;
-      font-variant-numeric: tabular-nums;
-      color: #6b7280;
-      text-align: center;
-      user-select: none;
-    }
+  &:disabled {
+    color: #d1d5db;
+    cursor: not-allowed;
   }
+}
+
+.variant-label {
+  min-width: 40px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #6b7280;
+  text-align: center;
+  user-select: none;
 }
 
 // ==================== 推荐问题 ====================
@@ -1099,11 +1191,11 @@ $card-shadow-hover: 0 16px 40px rgb(15 23 42 / 12%);
 }
 
 // ==================== 移动端适配 ====================
-@media (width <= 768px) {
+@media (width <=768px) {
   .msg-row {
     gap: 8px;
 
-    &.user-row .msg-content,
+    &.user-row .user-message-wrap,
     &.ai-row .ai-message-wrap {
       max-width: 95%;
     }

@@ -1,6 +1,5 @@
 import http from '../http';
-
-const BaseUrl = '/api';
+import { aiPrefix } from '../http';
 
 // ==================== 类型定义(与后端 DocumentSplitController DTO 逐字段对齐) ====================
 
@@ -121,7 +120,7 @@ export interface ChunkListResult {
 
 /** 分片预览(不落库):套用试参配置立即返回切块+统计;body 空对象=按当前生效配置 */
 export const previewSplit = (documentId: string, data?: SplitConfigDto, maxChunks?: number) => {
-  return http.post(`${BaseUrl}/document/split/preview/${documentId}`, data ?? {}, {
+  return http.post(`${aiPrefix}/document/split/preview/${documentId}`, data ?? {}, {
     params: maxChunks ? { maxChunks } : {},
   });
 };
@@ -131,47 +130,47 @@ export const compareSplit = (
   documentId: string,
   data: { configA: SplitConfigDto; configB: SplitConfigDto; sampleChunks?: number },
 ) => {
-  return http.post(`${BaseUrl}/document/split/compare/${documentId}`, data);
+  return http.post(`${aiPrefix}/document/split/compare/${documentId}`, data);
 };
 
 /** 配置全貌:生效值+各字段来源(document/knowledge_base/default)+文档级原值+知识库级值 */
 export const getSplitConfig = (documentId: string) => {
-  return http.get(`${BaseUrl}/document/${documentId}/split-config`);
+  return http.get(`${aiPrefix}/document/${documentId}/split-config`);
 };
 
 /** 保存文档级配置(只写库不重建;字段传 null=清除该字段覆盖) */
 export const saveSplitConfig = (documentId: string, data: SplitConfigDto) => {
-  return http.put(`${BaseUrl}/document/${documentId}/split-config`, data);
+  return http.put(`${aiPrefix}/document/${documentId}/split-config`, data);
 };
 
 /** 一键重切:保存配置+清理旧索引(Milvus+BM25+缓存)+异步重新入库 */
 export const resplitDocument = (documentId: string, data: SplitConfigDto) => {
-  return http.post(`${BaseUrl}/document/${documentId}/resplit`, data);
+  return http.post(`${aiPrefix}/document/${documentId}/resplit`, data);
 };
 
 /** 线上分片分页浏览(含质量统计) */
 export const getDocumentChunks = (documentId: string, page = 1, size = 20) => {
-  return http.get(`${BaseUrl}/document/${documentId}/chunks`, { page, size });
+  return http.get(`${aiPrefix}/document/${documentId}/chunks`, { page, size });
 };
 
 /** 编辑分片文本(context_prefix+新文本重向量化,与入库同口径) */
 export const updateChunkText = (documentId: string, chunkId: string, text: string) => {
-  return http.put(`${BaseUrl}/document/${documentId}/chunks/${chunkId}`, { text });
+  return http.put(`${aiPrefix}/document/${documentId}/chunks/${chunkId}`, { text });
 };
 
 /** 停用/启用分片(向量保留不重embed,停用后dense/BM25/原生三路过滤全生效) */
 export const setChunkApply = (documentId: string, chunkId: string, isApply: boolean) => {
-  return http.put(`${BaseUrl}/document/${documentId}/chunks/${chunkId}/apply`, { isApply });
+  return http.put(`${aiPrefix}/document/${documentId}/chunks/${chunkId}/apply`, { isApply });
 };
 
 /** 物理删除分片(不可恢复) */
 export const deleteChunk = (documentId: string, chunkId: string) => {
-  return http.delete(`${BaseUrl}/document/${documentId}/chunks/${chunkId}`);
+  return http.delete(`${aiPrefix}/document/${documentId}/chunks/${chunkId}`);
 };
 
 /** 合并分片(有序 2~10 个;首块原地升级重向量化,其余删除) */
 export const mergeChunks = (documentId: string, chunkIds: string[]) => {
-  return http.post(`${BaseUrl}/document/${documentId}/chunks/merge`, { chunkIds });
+  return http.post(`${aiPrefix}/document/${documentId}/chunks/merge`, { chunkIds });
 };
 
 /** 二次切分:points=精确偏移切分点(严格递增) 或 targetSize=目标尺寸自动切 */
@@ -180,7 +179,7 @@ export const splitChunk = (
   chunkId: string,
   data: { points?: number[]; targetSize?: number },
 ) => {
-  return http.post(`${BaseUrl}/document/${documentId}/chunks/${chunkId}/split`, data);
+  return http.post(`${aiPrefix}/document/${documentId}/chunks/${chunkId}/split`, data);
 };
 
 export default {

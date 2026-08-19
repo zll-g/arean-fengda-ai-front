@@ -14,7 +14,7 @@ import { ElMessage } from 'element-plus';
 import http from '@/api/http';
 import { layer } from '@layui/layer-vue';
 import { isLoggedIn } from '@/utils/device';
-
+import { ensureUsageAccess } from '@/utils/usageAccess';
 // 路由实例
 let router: Router;
 // 路由集合
@@ -61,18 +61,24 @@ const init = (app: App<Element>) => {
       }
 
       // 验证是否需要验证权限 ||  如果是登录页或错误页时，直接跳转至对应页面页
-      if (!to.meta.requireAuth || to.name === 'index') {
+      if (!to.meta.requireAuth || to.name === 'login') {
         next();
         return;
       }
 
       // 验证路由权限
       if (isLoggedIn()) {
+        if (to.meta.adminOnly) {
+          const allowed = await ensureUsageAccess();
+          if (!allowed) {
+            alert404(from, next, `权限不足，您无权限访问【${to?.meta?.title || '页面'}】`);
+            return;
+          }
+        }
         next();
       } else {
         alert404(from, next, `权限不足，您无权限访问【${to?.meta?.title || '页面'}】`);
-        // next('/index');
-        next();
+        next('/login');
         return;
       }
     },
@@ -91,14 +97,14 @@ async function alert404(
   content?: string,
 ) {
   NProgress.done();
-  if (!('/index' == from.path || '/callback' == from.path)) {
+  if (!('/index' == from.path || '/callback' == from.path || 'login' == from.path)) {
     ElMessage.warning(content || '抱歉，您访问的页面不存在！');
-    // next('/index');
+    next(from.fullPath);
     return;
   }
 
   //判断是从登录页进来的
-  if (['/', '/index', '/callback'].includes(from.path)) {
+  if (['/', '/index', '/callback', '/login'].includes(from.path)) {
     next();
   } else {
     next(from.fullPath);

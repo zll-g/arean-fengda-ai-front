@@ -225,6 +225,7 @@ import {
   Document,
   Lightning,
   Lock,
+  MagicStick,
   Operation,
   Search,
   Unlock,
@@ -252,7 +253,7 @@ const defaultForm = () => ({
   name: '',
   description: '',
   chunkOverlap: 500,
-  splitStrategy: 'recursive',
+  splitStrategy: 'custom',
   accessLevel: PUBLIC_ACCESS_LEVEL,
 });
 
@@ -275,6 +276,12 @@ const allDepartmentTreeData = ref<OrganizationTreeNode[]>([]);
 const isDepartmentKb = computed(() => state.accessType === DEPARTMENT_ACCESS_LEVEL);
 
 const splitOptions = computed(() => [
+  {
+    label: t('knowledgeBase.dialog.splitOptions.custom.label'),
+    value: 'custom',
+    iconComponent: markRaw(MagicStick),
+    desc: t('knowledgeBase.dialog.splitOptions.custom.desc'),
+  },
   {
     label: t('knowledgeBase.dialog.splitOptions.recursive.label'),
     value: 'recursive',
@@ -1266,7 +1273,7 @@ defineExpose({ open });
 }
 
 /* 响应式 */
-@media (width <= 920px) {
+@media (width <=920px) {
   :deep(.el-dialog) {
     width: 95% !important;
   }
@@ -1300,7 +1307,7 @@ defineExpose({ open });
   }
 }
 
-@media (width <= 640px) {
+@media (width <=640px) {
   .dialog-scroll-wrapper {
     padding: 16px;
   }

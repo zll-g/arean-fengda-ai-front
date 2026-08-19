@@ -2,18 +2,24 @@
   <div v-loading="loading" class="template-detail-page">
     <div class="detail-header">
       <el-button text @click="router.back()">
-        <el-icon><ArrowLeft /></el-icon>
+        <el-icon>
+          <ArrowLeft />
+        </el-icon>
         {{ t('templateDetail.back') }}
       </el-button>
 
       <div class="header-actions">
         <el-button @click="router.push(`/web/template/edit/${templateId}`)">
-          <el-icon><Edit /></el-icon>
+          <el-icon>
+            <Edit />
+          </el-icon>
           {{ t('templateDetail.edit') }}
         </el-button>
 
         <el-button type="primary" @click="router.push(`/web/form/${templateId}`)">
-          <el-icon><Microphone /></el-icon>
+          <el-icon>
+            <Microphone />
+          </el-icon>
           {{ t('templateDetail.voiceFill') }}
         </el-button>
       </div>
@@ -48,7 +54,9 @@
       </p>
 
       <div v-if="detail.sampleSpeech" class="speech-box">
-        <el-icon><Microphone /></el-icon>
+        <el-icon>
+          <Microphone />
+        </el-icon>
         <span>{{ detail.sampleSpeech }}</span>
       </div>
     </div>
@@ -668,7 +676,6 @@ code {
 /* Loading */
 :deep(.el-loading-mask) {
   background: rgb(255 250 245 / 78%);
-  backdrop-filter: blur(2px);
 }
 
 :deep(.el-loading-spinner .path) {
@@ -689,7 +696,7 @@ code {
 }
 
 /* 响应式 */
-@media (width <= 768px) {
+@media (width <=768px) {
   .template-detail-page {
     padding: 0;
   }
@@ -741,7 +748,7 @@ code {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .detail-header {
     .header-actions {
       flex-direction: column;
